@@ -1,0 +1,131 @@
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import RoleBasedRoute from './components/RoleBasedRoute';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import { setupDatabase } from './utils/setupDatabase';
+
+// Lazy load pages for better performance
+const HomePage = lazy(() => import('./pages/HomePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+
+// Role-specific dashboards - these will be created later
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard').catch(() => ({ default: () => <div className="p-8">Super Admin Dashboard - Coming Soon</div> })));
+const AcademyDashboard = lazy(() => import('./pages/AcademyDashboard').catch(() => ({ default: () => <div className="p-8">Academy Dashboard - Coming Soon</div> })));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').catch(() => ({ default: () => <div className="p-8">Teacher Dashboard - Coming Soon</div> })));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard').catch(() => ({ default: () => <div className="p-8">Student Dashboard - Coming Soon</div> })));
+
+// Public pages - these will be created later
+const PendingApprovalPage = lazy(() => import('./pages/PendingApprovalPage').catch(() => ({ default: () => <div className="p-8">Your account is pending approval</div> })));
+
+// Loading spinner component
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
+  </div>
+);
+
+// AppContent component to use hooks inside Router
+const AppContent = () => {
+  const { dbInitialized } = useAuth();
+  
+  useEffect(() => {
+    // Initialize database tables if needed
+    const initDb = async () => {
+      try {
+        await setupDatabase();
+        console.log('Database initialization check completed');
+      } catch (error) {
+        console.error('Error initializing database:', error);
+      }
+    };
+    
+    if (!dbInitialized) {
+      initDb();
+    }
+  }, [dbInitialized]);
+  
+  return (
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navbar />
+      <Suspense fallback={<LoadingSpinner />}>
+        <div className="flex-grow pt-16"> {/* Add padding top to account for fixed navbar */}
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/features" element={<FeaturesPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/pending-approval" element={
+              <PrivateRoute>
+                <PendingApprovalPage />
+              </PrivateRoute>
+            } />
+            
+            {/* Legacy Dashboard - will redirect to role-specific dashboard */}
+            <Route path="/dashboard" element={<PrivateRoute />}>
+              <Route index element={<DashboardPage />} />
+            </Route>
+            
+            {/* Role-Based Routes */}
+            <Route path="/super-admin/dashboard" element={
+              <RoleBasedRoute requiredRole="super_admin">
+                <SuperAdminDashboard />
+              </RoleBasedRoute>
+            } />
+            
+            <Route path="/academy/dashboard" element={
+              <RoleBasedRoute requiredRole="academy_owner">
+                <AcademyDashboard />
+              </RoleBasedRoute>
+            } />
+            
+            <Route path="/teacher/dashboard" element={
+              <RoleBasedRoute requiredRole="teacher">
+                <TeacherDashboard />
+              </RoleBasedRoute>
+            } />
+            
+            <Route path="/student/dashboard" element={
+              <RoleBasedRoute requiredRole="student">
+                <StudentDashboard />
+              </RoleBasedRoute>
+            } />
+            
+            {/* Catch all route - 404 page */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </div>
+      </Suspense>
+      <Footer />
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </Router>
+  );
+}
+
+export default App;
