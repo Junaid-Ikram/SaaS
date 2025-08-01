@@ -17,17 +17,22 @@ const LoginPage = () => {
     setError(null);
     
     try {
+      console.log('Attempting to sign in with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) throw error;
-      navigate('/dashboard');
+      
+      console.log('Login successful, user authenticated');
+      // Don't set loading to false here, let the auth state change handler manage it
+      // The redirection will be handled by the auth state change listener in AuthContext
+      // and the role-based routing in DashboardPage
     } catch (error) {
+      console.error('Login error:', error.message);
       setError(error.message);
-    } finally {
-      setLoading(false);
+      setLoading(false); // Only set loading to false on error
     }
   };
 

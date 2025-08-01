@@ -16,7 +16,7 @@ const PendingApprovalPage = () => {
       >
         <img
           className="mx-auto h-16 w-auto"
-          src="https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg"
+          src="https://tailwindui.com/img/logos/workflow-mark-green-600.svg"
           alt="Workflow"
         />
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Account Pending Approval</h2>
@@ -31,12 +31,12 @@ const PendingApprovalPage = () => {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="text-center">
             <motion.div
-              className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100"
+              className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 200, delay: 0.5 }}
             >
-              <svg className="h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-8 w-8 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </motion.div>
@@ -93,7 +93,7 @@ const PendingApprovalPage = () => {
             >
               <motion.button
                 type="button"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                 onClick={signOut}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -103,7 +103,7 @@ const PendingApprovalPage = () => {
               
               <Link 
                 to="/"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-indigo-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-green-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
                 Return to Home Page
               </Link>

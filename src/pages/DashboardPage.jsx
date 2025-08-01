@@ -1,9 +1,56 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, userRole, loading } = useAuth();
+  const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        // If no user is logged in, redirect to login page
+        navigate('/login');
+      } else if (userRole) {
+        // Redirect based on user role
+        console.log('Redirecting to role-specific dashboard for:', userRole);
+        switch (userRole) {
+          case 'super_admin':
+            navigate('/super-admin/dashboard', { replace: true });
+            break;
+          case 'academy_owner':
+            navigate('/academy/dashboard', { replace: true });
+            break;
+          case 'teacher':
+            navigate('/teacher/dashboard', { replace: true });
+            break;
+          case 'student':
+            navigate('/student/dashboard', { replace: true });
+            break;
+          default:
+            // If user has a role but no specific dashboard, or a generic 'user' role
+            console.log('User role not recognized or no specific dashboard:', userRole);
+            // Show the generic dashboard below
+            break;
+        }
+      } else {
+        // If user is logged in but role is not yet determined or is 'user'
+        console.log('User logged in, but role not yet determined or is generic user.');
+        // The generic dashboard below will be shown
+      }
+    }
+  }, [user, userRole, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-green-600"></div>
+        <p className="ml-4 text-green-600">Loading user data...</p>
+      </div>
+    );
+  }
+
+  // If user is logged in but no specific role dashboard is found yet, or it's a generic user
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -45,16 +92,16 @@ const DashboardPage = () => {
                   <div className="px-4 py-5 sm:p-6">
                     <h3 className="text-lg font-medium text-gray-900">Quick Actions</h3>
                     <div className="mt-3 grid grid-cols-2 gap-2">
-                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         New Project
                       </button>
-                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Invite Team
                       </button>
-                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Settings
                       </button>
-                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                      <button className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Support
                       </button>
                     </div>

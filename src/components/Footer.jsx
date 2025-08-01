@@ -123,12 +123,12 @@ const Footer = () => {
               <input
                 type="email"
                 placeholder="Enter your email"
-                className="min-w-0 flex-1 bg-gray-800 border-0 py-2 px-4 text-white focus:ring-2 focus:ring-indigo-500 rounded-l-md"
+                className="min-w-0 flex-1 bg-gray-800 border-0 py-2 px-4 text-white focus:ring-2 focus:ring-green-500 rounded-l-md"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-indigo-600 hover:bg-indigo-700 py-2 px-4 rounded-r-md text-white font-medium"
+                className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded-r-md text-white font-medium"
               >
                 Subscribe
               </motion.button>

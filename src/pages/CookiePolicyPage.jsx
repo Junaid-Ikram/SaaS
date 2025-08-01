@@ -113,14 +113,14 @@ const CookiePolicyPage = () => {
           
           <h2 className="text-xl font-semibold text-gray-900 mb-4 mt-8">7. Where Can You Get Further Information?</h2>
           <p className="text-gray-700 mb-4">
-            If you have any questions about our use of cookies or other technologies, please contact us through our <Link to="/contact" className="text-indigo-600 hover:text-indigo-800">contact page</Link>.
+            If you have any questions about our use of cookies or other technologies, please contact us through our <Link to="/contact" className="text-green-600 hover:text-green-800">contact page</Link>.
           </p>
         </motion.div>
         
         <motion.div variants={itemVariants} className="text-center">
           <Link 
             to="/"
-            className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
           >
             Return to Home
           </Link>

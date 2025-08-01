@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
@@ -32,19 +32,20 @@ const PendingApprovalPage = lazy(() => import('./pages/PendingApprovalPage').cat
 // Loading spinner component
 const LoadingSpinner = () => (
   <div className="flex justify-center items-center h-screen">
-    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-indigo-600"></div>
+    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-600"></div>
   </div>
 );
 
 // AppContent component to use hooks inside Router
 const AppContent = () => {
-  const { dbInitialized } = useAuth();
+  const { user, userRole, loading, dbInitialized, setDatabaseInitialized } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Initialize database tables if needed
     const initDb = async () => {
       try {
-        await setupDatabase();
+        await setupDatabase(setDatabaseInitialized);
         console.log('Database initialization check completed');
       } catch (error) {
         console.error('Error initializing database:', error);
@@ -62,16 +63,16 @@ const AppContent = () => {
       <Suspense fallback={<LoadingSpinner />}>
         <div className="flex-grow pt-16"> {/* Add padding top to account for fixed navbar */}
           <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/features" element={<FeaturesPage />} />
-            <Route path="/pricing" element={<PricingPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/terms" element={<TermsOfServicePage />} />
-            <Route path="/privacy" element={<PrivacyPolicyPage />} />
-            <Route path="/cookies" element={<CookiePolicyPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            {/* Public Routes - Redirect if authenticated */}
+            <Route path="/" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <HomePage />} />
+            <Route path="/features" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <FeaturesPage />} />
+            <Route path="/pricing" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <PricingPage />} />
+            <Route path="/contact" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <ContactPage />} />
+            <Route path="/terms" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <TermsOfServicePage />} />
+            <Route path="/privacy" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <PrivacyPolicyPage />} />
+            <Route path="/cookies" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <CookiePolicyPage />} />
+            <Route path="/login" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <LoginPage />} />
+            <Route path="/register" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <RegisterPage />} />
             <Route path="/pending-approval" element={
               <PrivateRoute>
                 <PendingApprovalPage />
@@ -120,7 +121,12 @@ const AppContent = () => {
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <AuthProvider>
         <AppContent />
       </AuthProvider>

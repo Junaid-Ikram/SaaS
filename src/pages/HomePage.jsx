@@ -103,7 +103,7 @@ const HomePage = () => {
             >
               <h1 className="text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl">
                 <span className="block">Transform Education with</span>
-                <span className="block bg-gradient-to-r from-primary-300 to-secondary-300 bg-clip-text text-transparent">Academy Platform</span>
+                <span className="block bg-gradient-to-r from-green-300 to-secondary-300 bg-clip-text text-transparent">Academy Platform</span>
               </h1>
               <p className="mt-3 max-w-md mx-auto text-base text-primary-100 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
                 The complete solution for academies, teachers, and students. Manage your educational institution with ease and elevate the learning experience.
@@ -127,7 +127,8 @@ const HomePage = () => {
               >
                 <Link
                   to="/register"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 md:py-4 md:text-lg md:px-10 transition-all duration-200 shadow-lg"
+                  state={{ initialTab: 'academy' }}
+                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-secondary-600 hover:from-green-700 hover:to-secondary-700 md:py-3 md:text-base md:px-8 transition-all duration-200 shadow-lg"
                 >
                   <span>Create Your Academy</span>
                   <FaArrowRight className="ml-2 animate-pulse" />
@@ -140,7 +141,7 @@ const HomePage = () => {
               >
                 <Link
                   to="/features"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10 transition-all duration-200"
+                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
                 >
                   Explore Features
                 </Link>
@@ -152,7 +153,7 @@ const HomePage = () => {
               >
                 <Link
                   to="/login"
-                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10 transition-all duration-200"
+                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
                 >
                   Sign in
                 </Link>
@@ -160,14 +161,41 @@ const HomePage = () => {
             </motion.div>
             
             <motion.div
-              className="mt-8 text-sm text-primary-200 flex justify-center items-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              className="mt-8 max-w-md mx-auto bg-white rounded-lg shadow-lg p-6"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
-              whileHover={{ scale: 1.05 }}
             >
-              <FaCheckCircle className="h-5 w-5 mr-2" />
-              <span>No credit card required • 14-day free trial</span>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">What's included in the trial</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M9 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-4V3a1 1 0 10-2 0v1H9zM4 9V6h12v3H4zm0 4h12v3H4v-3z" clipRule="evenodd"></path></svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-base font-medium text-gray-900">Secure Authentication</p>
+                    <p className="text-sm text-gray-500">Role-based access control with JWT tokens</p>
+                  </div>
+                </li>
+                <li className="flex items-center">
+                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-base font-medium text-gray-900">Email Notifications</p>
+                    <p className="text-sm text-gray-500">Automated emails for user approvals and updates</p>
+                  </div>
+                </li>
+                <li className="flex items-center">
+                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
+                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1H3zm10 2H7v2h6V5zm0 4H7v2h6V9zm0 4H7v2h6v-2z" clipRule="evenodd"></path></svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-base font-medium text-gray-900">Analytics Dashboard</p>
+                    <p className="text-sm text-gray-500">Comprehensive insights for all user roles</p>
+                  </div>
+                </li>
+              </ul>
             </motion.div>
             <motion.div 
               className="mt-4 text-center"
@@ -196,8 +224,8 @@ const HomePage = () => {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
               >
-                <Link to="/register" className="flex flex-col items-center text-white">
-                  <FaSchool className="h-8 w-8 mb-2 text-primary-300" />
+                <Link to="/register" state={{ initialTab: 'academy' }} className="flex flex-col items-center text-white">
+                  <FaSchool className="h-8 w-8 mb-2 text-green-300" />
                   <span className="text-sm font-medium">Academy Owner</span>
                 </Link>
               </motion.div>
@@ -206,8 +234,8 @@ const HomePage = () => {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
               >
-                <Link to="/register" className="flex flex-col items-center text-white">
-                  <FaChalkboardTeacher className="h-8 w-8 mb-2 text-purple-300" />
+                <Link to="/register" state={{ initialTab: 'teacher' }} className="flex flex-col items-center text-white">
+                  <FaChalkboardTeacher className="h-8 w-8 mb-2 text-green-300" />
                   <span className="text-sm font-medium">Teacher</span>
                 </Link>
               </motion.div>
@@ -216,8 +244,8 @@ const HomePage = () => {
                 whileHover={{ scale: 1.05, y: -5 }}
                 className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
               >
-                <Link to="/register" className="flex flex-col items-center text-white">
-                  <FaGraduationCap className="h-8 w-8 mb-2 text-indigo-300" />
+                <Link to="/register" state={{ initialTab: 'student' }} className="flex flex-col items-center text-white">
+                  <FaGraduationCap className="h-8 w-8 mb-2 text-green-300" />
                   <span className="text-sm font-medium">Student</span>
                 </Link>
               </motion.div>
@@ -230,7 +258,7 @@ const HomePage = () => {
       <AnimatedSection className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
-            <h2 className="text-base text-indigo-600 font-semibold tracking-wide uppercase">Role-Based Platform</h2>
+            <h2 className="text-base text-green-600 font-semibold tracking-wide uppercase">Role-Based Platform</h2>
             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Tailored for Every Educational Role
             </p>
@@ -250,7 +278,7 @@ const HomePage = () => {
               {/* Academy Owners */}
               <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-indigo-600 text-white shadow-lg">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-600 text-white shadow-lg">
                     <FaSchool className="h-8 w-8" />
                   </div>
                 </div>
@@ -285,7 +313,7 @@ const HomePage = () => {
               {/* Teachers */}
               <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-purple-600 text-white shadow-lg">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-600 text-white shadow-lg">
                     <FaChalkboardTeacher className="h-8 w-8" />
                   </div>
                 </div>
@@ -320,7 +348,7 @@ const HomePage = () => {
               {/* Students */}
               <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-indigo-500 text-white shadow-lg">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-500 text-white shadow-lg">
                     <FaGraduationCap className="h-8 w-8" />
                   </div>
                 </div>
@@ -356,17 +384,17 @@ const HomePage = () => {
         </div>
       </AnimatedSection>
 
-      {/* Free Trial Section */}
-      <AnimatedSection className="py-16 bg-gradient-to-r from-indigo-100 to-purple-100">
+      
+      <AnimatedSection className="py-16 bg-gradient-to-r from-green-100 to-teal-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:flex lg:items-center lg:justify-between">
             <div className="lg:w-1/2">
               <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                <span className="block">Start your 14-day free trial</span>
-                <span className="block text-indigo-600">No credit card required</span>
+                
+                <span className="block text-green-600">No credit card required</span>
               </h2>
               <p className="mt-4 text-lg text-gray-500">
-                Experience the full power of Academy Platform with our risk-free trial. Get access to all features and see how it can transform your educational institution.
+                
               </p>
               <div className="mt-8 space-y-4">
                 <div className="flex items-center">
@@ -397,9 +425,9 @@ const HomePage = () => {
                 >
                   <Link
                     to="/register"
-                    className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 md:py-4 md:text-lg md:px-8 shadow-md transition-all duration-200 flex items-center"
+                    className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 md:py-4 md:text-lg md:px-8 shadow-md transition-all duration-200 flex items-center"
                   >
-                    <span>Start Free Trial</span>
+                    
                     <FaArrowRight className="ml-2" />
                   </Link>
                 </motion.div>
@@ -419,7 +447,7 @@ const HomePage = () => {
                     <div className="mt-6 space-y-6">
                       <div className="flex">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
@@ -432,7 +460,7 @@ const HomePage = () => {
                       </div>
                       <div className="flex">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
@@ -445,7 +473,7 @@ const HomePage = () => {
                       </div>
                       <div className="flex">
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
+                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
                             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -466,7 +494,7 @@ const HomePage = () => {
       </AnimatedSection>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-indigo-800 to-purple-800 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-r from-green-800 to-teal-800 text-white relative overflow-hidden">
         {/* Animated background elements */}
         <motion.div 
           className="absolute top-10 right-10 w-64 h-64 bg-purple-500 rounded-full opacity-10"
@@ -478,7 +506,7 @@ const HomePage = () => {
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute bottom-10 left-10 w-96 h-96 bg-indigo-500 rounded-full opacity-10"
+          className="absolute bottom-10 left-10 w-96 h-96 bg-green-500 rounded-full opacity-10"
           animate={{ 
             scale: [1, 1.3, 1],
             x: [0, 30, 0],
@@ -498,7 +526,7 @@ const HomePage = () => {
               <span className="block">Ready to transform your academy?</span>
               <span className="block mt-2">Get started today.</span>
             </h2>
-            <p className="mt-4 text-lg leading-6 text-indigo-100">
+            <p className="mt-4 text-lg leading-6 text-green-100">
               Join thousands of educational institutions that have elevated their teaching and learning experience with our platform.
             </p>
             
@@ -517,9 +545,9 @@ const HomePage = () => {
                   to="/register"
                   className="w-full flex flex-col items-center justify-center px-4 py-4 bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm hover:bg-opacity-20 transition-all duration-200 h-full"
                 >
-                  <FaSchool className="h-8 w-8 mb-2 text-indigo-300" />
+                  <FaSchool className="h-8 w-8 mb-2 text-green-300" />
                   <span className="text-white font-medium">Academy Owner</span>
-                  <span className="text-xs text-indigo-200 mt-1">Create your academy</span>
+                  <span className="text-xs text-green-200 mt-1">Create your academy</span>
                 </Link>
               </motion.div>
               
@@ -538,7 +566,7 @@ const HomePage = () => {
                 >
                   <FaChalkboardTeacher className="h-8 w-8 mb-2 text-purple-300" />
                   <span className="text-white font-medium">Teacher</span>
-                  <span className="text-xs text-indigo-200 mt-1">Join an academy</span>
+                  <span className="text-xs text-green-200 mt-1">Join an academy</span>
                 </Link>
               </motion.div>
               
@@ -555,9 +583,9 @@ const HomePage = () => {
                   to="/register"
                   className="w-full flex flex-col items-center justify-center px-4 py-4 bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm hover:bg-opacity-20 transition-all duration-200 h-full"
                 >
-                  <FaGraduationCap className="h-8 w-8 mb-2 text-indigo-300" />
+                  <FaGraduationCap className="h-8 w-8 mb-2 text-green-300" />
                   <span className="text-white font-medium">Student</span>
-                  <span className="text-xs text-indigo-200 mt-1">Enroll in classes</span>
+                  <span className="text-xs text-green-200 mt-1">Enroll in classes</span>
                 </Link>
               </motion.div>
             </div>
@@ -573,7 +601,7 @@ const HomePage = () => {
             >
               <Link
                 to="/register"
-                className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-white hover:bg-indigo-50 sm:w-auto transition-all duration-200 shadow-lg"
+                className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-green-700 bg-white hover:bg-green-50 sm:w-auto transition-all duration-200 shadow-lg"
               >
                 <FaUserPlus className="mr-2" />
                 <span>Sign up for free</span>
@@ -582,13 +610,13 @@ const HomePage = () => {
             </motion.div>
             
             <motion.p 
-              className="mt-4 text-sm text-indigo-200"
+              className="mt-4 text-sm text-green-200"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               viewport={{ once: true }}
             >
-              <FaCheckCircle className="inline mr-1" /> No credit card required • 14-day free trial
+              
             </motion.p>
           </motion.div>
         </div>

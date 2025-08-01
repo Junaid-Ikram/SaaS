@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaUser, FaEnvelope, FaLock, FaSchool, FaUserTie, FaUserGraduate, FaIdCard, FaPhone, FaMapMarkerAlt, FaBook, FaCalendarAlt, FaImage, FaArrowRight, FaCheckCircle } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
 const RegisterPage = () => {
-  const [activeTab, setActiveTab] = useState('academy');
+  const location = useLocation();
+  const initialTab = location.state?.initialTab || 'academy';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -31,17 +33,30 @@ const RegisterPage = () => {
   const { registerAcademyOwner, registerTeacher, registerStudent, fetchAcademies } = useAuth();
   
   // Fetch academy IDs for dropdown
+  const [loadingAcademies, setLoadingAcademies] = useState(false);
+  const [academyError, setAcademyError] = useState(null);
+  
   useEffect(() => {
     const fetchAcademyIds = async () => {
       try {
+        setLoadingAcademies(true);
+        setAcademyError(null);
+        
         const result = await fetchAcademies();
         if (result.success) {
           setAcademyIdList(result.academies || []);
+          if (result.academies.length === 0) {
+            console.log('No academies available for selection');
+          }
         } else {
           console.error('Error fetching academy IDs:', result.error);
+          setAcademyError('Failed to load academies. Please try again.');
         }
       } catch (error) {
         console.error('Error fetching academy IDs:', error);
+        setAcademyError('An unexpected error occurred. Please try again.');
+      } finally {
+        setLoadingAcademies(false);
       }
     };
 
@@ -94,6 +109,12 @@ const RegisterPage = () => {
   };
 
   const validateForm = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError("Invalid email format");
+      return false;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords don't match");
       return false;
@@ -127,7 +148,6 @@ const RegisterPage = () => {
     return true;
   };
 
-  // Registration status message based on role
   const getRegistrationStatusMessage = (role) => {
     switch (role) {
       case 'academy_owner':
@@ -153,7 +173,7 @@ const RegisterPage = () => {
     
     try {
       let result;
-      
+      console.log('Registering with email:', formData.email); // Debug log
       // Register based on selected role
       switch (activeTab) {
         case 'academy':
@@ -210,7 +230,6 @@ const RegisterPage = () => {
     }
   };
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -292,9 +311,9 @@ const RegisterPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveTab('academy')}
-                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'academy' ? 'bg-primary-600 text-white' : 'text-gray-700'}`}
+                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'academy' ? 'bg-gradient-to-r from-green-600 to-secondary-600 text-white' : 'text-gray-700'}`}
                 >
-                  <FaSchool className="mr-2" />
+                  <FaSchool className={`mr-2 ${activeTab !== 'academy' ? 'text-green-600' : ''}`} />
                   Academy Owner
                 </motion.button>
                 <motion.button
@@ -303,9 +322,9 @@ const RegisterPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveTab('teacher')}
-                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'teacher' ? 'bg-primary-600 text-white' : 'text-gray-700'}`}
+                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'teacher' ? 'bg-gradient-to-r from-green-600 to-secondary-600 text-white' : 'text-gray-700'}`}
                 >
-                  <FaUserTie className="mr-2" />
+                  <FaUserTie className={`mr-2 ${activeTab !== 'teacher' ? 'text-green-600' : ''}`} />
                   Teacher
                 </motion.button>
                 <motion.button
@@ -314,9 +333,9 @@ const RegisterPage = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setActiveTab('student')}
-                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'student' ? 'bg-primary-600 text-white' : 'text-gray-700'}`}
+                  className={`flex items-center px-4 py-2 rounded-md ${activeTab === 'student' ? 'bg-gradient-to-r from-green-600 to-secondary-600 text-white' : 'text-gray-700'}`}
                 >
-                  <FaUserGraduate className="mr-2" />
+                  <FaUserGraduate className={`mr-2 ${activeTab !== 'student' ? 'text-green-600' : ''}`} />
                   Student
                 </motion.button>
               </div>
@@ -423,7 +442,7 @@ const RegisterPage = () => {
                         type="password"
                         autoComplete="new-password"
                         required
-                        className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                        className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                         placeholder="Confirm Password"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
@@ -444,7 +463,7 @@ const RegisterPage = () => {
                           name="academyName"
                           type="text"
                           required
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Academy Name"
                           value={formData.academyName}
                           onChange={handleInputChange}
@@ -459,7 +478,7 @@ const RegisterPage = () => {
                           id="contactNumber"
                           name="contactNumber"
                           type="tel"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Contact Number (Optional)"
                           value={formData.contactNumber}
                           onChange={handleInputChange}
@@ -474,7 +493,7 @@ const RegisterPage = () => {
                           id="address"
                           name="address"
                           type="text"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Academy Address (Optional)"
                           value={formData.address}
                           onChange={handleInputChange}
@@ -494,15 +513,29 @@ const RegisterPage = () => {
                           id="academyId"
                           name="academyId"
                           required
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          disabled={loadingAcademies}
+                          className={`appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border ${academyError ? 'border-red-300' : 'border-gray-300'} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
                           value={formData.academyId}
                           onChange={handleInputChange}
                         >
-                          <option value="">Select Academy</option>
-                          {academyIdList.map(academy => (
-                            <option key={academy.id} value={academy.id}>{academy.name}</option>
-                          ))}
+                          <option value="">{loadingAcademies ? 'Loading academies...' : 'Select Academy'}</option>
+                          {!loadingAcademies && academyIdList.length > 0 ? (
+                            academyIdList.map(academy => (
+                              <option key={academy.id} value={academy.id}>{academy.name}</option>
+                            ))
+                          ) : (
+                            !loadingAcademies && <option disabled>No academies available</option>
+                          )}
                         </select>
+                        {academyError && (
+                          <p className="mt-1 text-xs text-red-500">{academyError}</p>
+                        )}
+                        {!loadingAcademies && academyIdList.length === 0 && (
+                          <p className="mt-1 text-xs text-gray-500">No academies available. Please register as an academy owner first or contact an existing academy.</p>
+                        )}
+                        {!loadingAcademies && academyIdList.length === 0 && (
+                          <p className="mt-1 text-xs text-gray-500">No academies available. Please register as an academy owner first or contact an existing academy.</p>
+                        )}
                       </div>
 
                       <div className="relative">
@@ -513,7 +546,7 @@ const RegisterPage = () => {
                           id="specialization"
                           name="specialization"
                           type="text"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Subject Specialization (Optional)"
                           value={formData.specialization}
                           onChange={handleInputChange}
@@ -528,7 +561,7 @@ const RegisterPage = () => {
                           id="experience"
                           name="experience"
                           type="text"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Years of Experience (Optional)"
                           value={formData.experience}
                           onChange={handleInputChange}
@@ -543,7 +576,7 @@ const RegisterPage = () => {
                           id="contactNumber"
                           name="contactNumber"
                           type="tel"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Contact Number (Optional)"
                           value={formData.contactNumber}
                           onChange={handleInputChange}
@@ -563,15 +596,26 @@ const RegisterPage = () => {
                           id="academyId"
                           name="academyId"
                           required
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          disabled={loadingAcademies}
+                          className={`appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border ${academyError ? 'border-red-300' : 'border-gray-300'} placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm`}
                           value={formData.academyId}
                           onChange={handleInputChange}
                         >
-                          <option value="">Select Academy</option>
-                          {academyIdList.map(academy => (
-                            <option key={academy.id} value={academy.id}>{academy.name}</option>
-                          ))}
+                          <option value="">{loadingAcademies ? 'Loading academies...' : 'Select Academy'}</option>
+                          {!loadingAcademies && academyIdList.length > 0 ? (
+                            academyIdList.map(academy => (
+                              <option key={academy.id} value={academy.id}>{academy.name}</option>
+                            ))
+                          ) : (
+                            !loadingAcademies && <option disabled>No academies available</option>
+                          )}
                         </select>
+                        {academyError && (
+                          <p className="mt-1 text-xs text-red-500">{academyError}</p>
+                        )}
+                        {!loadingAcademies && academyIdList.length === 0 && (
+                          <p className="mt-1 text-xs text-gray-500">No academies available. Please register as an academy owner first or contact an existing academy.</p>
+                        )}
                       </div>
 
                       <div className="relative">
@@ -582,7 +626,7 @@ const RegisterPage = () => {
                           id="gradeLevel"
                           name="gradeLevel"
                           type="text"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Grade Level (Optional)"
                           value={formData.gradeLevel}
                           onChange={handleInputChange}
@@ -598,7 +642,7 @@ const RegisterPage = () => {
                           name="age"
                           type="number"
                           min="1"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Age (Optional)"
                           value={formData.age}
                           onChange={handleInputChange}
@@ -613,7 +657,7 @@ const RegisterPage = () => {
                           id="guardianContact"
                           name="guardianContact"
                           type="tel"
-                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                          className="appearance-none rounded-md relative block w-full pl-10 pr-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
                           placeholder="Guardian Contact (Optional)"
                           value={formData.guardianContact}
                           onChange={handleInputChange}
@@ -652,7 +696,7 @@ const RegisterPage = () => {
                     variants={buttonVariants}
                     whileHover="hover"
                     whileTap="tap"
-                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 shadow-lg transition-all duration-200"
+                    className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-secondary-600 hover:from-green-700 hover:to-secondary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 shadow-lg transition-all duration-200"
                   >
                     {loading ? (
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -670,7 +714,7 @@ const RegisterPage = () => {
                 <div className="text-sm text-center">
                   <p className="text-gray-600">
                     Already have an account?{' '}
-                    <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500 hover:underline transition-all duration-200">
+                    <Link to="/login" className="font-medium text-green-600 hover:text-green-500 hover:underline transition-all duration-200">
                       Sign in
                     </Link>
                   </p>

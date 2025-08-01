@@ -93,7 +93,7 @@ const TeacherDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold text-indigo-800">Teacher Dashboard</h1>
+        <h1 className="text-3xl font-bold text-green-800">Teacher Dashboard</h1>
         <p className="text-gray-600 mt-2">Manage your classes and students</p>
       </motion.div>
 
@@ -103,7 +103,7 @@ const TeacherDashboard = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'classes' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'classes' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             onClick={() => setActiveTab('classes')}
           >
             My Classes
@@ -111,7 +111,7 @@ const TeacherDashboard = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'students' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'students' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             onClick={() => setActiveTab('students')}
           >
             Students
@@ -119,7 +119,7 @@ const TeacherDashboard = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'materials' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'materials' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             onClick={() => setActiveTab('materials')}
           >
             Teaching Materials
@@ -127,7 +127,7 @@ const TeacherDashboard = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'profile' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'profile' ? 'border-green-500 text-green-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
             onClick={() => setActiveTab('profile')}
           >
             My Profile
@@ -140,20 +140,20 @@ const TeacherDashboard = () => {
         <div>
           {/* Upcoming Class Alert */}
           <motion.div
-            className="bg-indigo-50 border-l-4 border-indigo-500 p-4 mb-8 rounded-md"
+            className="bg-green-50 border-l-4 border-green-500 p-4 mb-8 rounded-md"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <svg className="h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-indigo-800">Upcoming Class: Advanced Web Development</h3>
-                <div className="mt-1 text-sm text-indigo-700">
+                <h3 className="text-sm font-medium text-green-800">Upcoming Class: Advanced Web Development</h3>
+                <div className="mt-1 text-sm text-green-700">
                   <p>Thursday, Oct 26 at 2:00 PM (in {getTimeRemaining('2023-10-26 14:00:00')})</p>
                 </div>
               </div>
@@ -161,7 +161,7 @@ const TeacherDashboard = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-md text-sm font-medium hover:bg-indigo-200"
+                  className="bg-green-100 text-green-700 px-3 py-1 rounded-md text-sm font-medium hover:bg-green-200"
                 >
                   Prepare Class
                 </motion.button>
@@ -184,7 +184,7 @@ const TeacherDashboard = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
               >
                 Create New Class
               </motion.button>
@@ -219,13 +219,13 @@ const TeacherDashboard = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
                           {formatDate(classItem.nextClass)}
-                          <span className="ml-2 text-xs text-indigo-600 font-medium">
+                          <span className="ml-2 text-xs text-green-600 font-medium">
                             (in {getTimeRemaining(classItem.nextClass)})
                           </span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
+                        <button className="text-green-600 hover:text-green-900 mr-3">View</button>
                         <button className="text-gray-600 hover:text-gray-900">Edit</button>
                       </td>
                     </motion.tr>
@@ -245,14 +245,14 @@ const TeacherDashboard = () => {
               whileHover="hover"
             >
               <div className="flex items-center">
-                <div className="bg-indigo-100 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-green-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-semibold text-gray-700">Total Classes</h3>
-                  <p className="text-2xl font-bold text-indigo-600">{classes.length}</p>
+                  <p className="text-2xl font-bold text-green-600">{classes.length}</p>
                 </div>
               </div>
             </motion.div>
@@ -266,14 +266,14 @@ const TeacherDashboard = () => {
               whileHover="hover"
             >
               <div className="flex items-center">
-                <div className="bg-indigo-100 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-green-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-semibold text-gray-700">Total Students</h3>
-                  <p className="text-2xl font-bold text-indigo-600">{students.length}</p>
+                  <p className="text-2xl font-bold text-green-600">{students.length}</p>
                 </div>
               </div>
             </motion.div>
@@ -287,14 +287,14 @@ const TeacherDashboard = () => {
               whileHover="hover"
             >
               <div className="flex items-center">
-                <div className="bg-indigo-100 p-3 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="bg-green-100 p-3 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-semibold text-gray-700">Teaching Hours</h3>
-                  <p className="text-2xl font-bold text-indigo-600">24h / week</p>
+                  <p className="text-2xl font-bold text-green-600">24h / week</p>
                 </div>
               </div>
             </motion.div>
@@ -349,7 +349,7 @@ const TeacherDashboard = () => {
                       {student.attendance}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button className="text-indigo-600 hover:text-indigo-900 mr-3">View Profile</button>
+                      <button className="text-green-600 hover:text-green-900 mr-3">View Profile</button>
                       <button className="text-gray-600 hover:text-gray-900">Grade</button>
                     </td>
                   </motion.tr>
