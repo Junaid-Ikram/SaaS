@@ -287,6 +287,147 @@ const SuperAdminDashboard = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Subscription Plans Management */}
+      <motion.div
+        className="mt-8 bg-white rounded-lg shadow-md p-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-gray-800">Subscription Plans</h2>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+          >
+            Add New Plan
+          </motion.button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Basic Plan */}
+          <motion.div
+            className="border border-gray-200 rounded-lg p-6 flex flex-col"
+            variants={cardVariants}
+            whileHover="hover"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Basic Plan</h3>
+              <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Active</span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-gray-900">$29</span>
+              <span className="text-gray-500 text-sm ml-1">/month</span>
+            </div>
+            <ul className="mb-6 space-y-2 flex-grow">
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Up to 5 Teachers</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Up to 50 Students</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Basic Analytics</span>
+              </li>
+            </ul>
+            <div className="flex space-x-2">
+              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
+              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
+            </div>
+          </motion.div>
+
+          {/* Pro Plan */}
+          <motion.div
+            className="border border-gray-200 rounded-lg p-6 flex flex-col bg-green-50 border-green-200"
+            variants={cardVariants}
+            whileHover="hover"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Pro Plan</h3>
+              <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Popular</span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-gray-900">$79</span>
+              <span className="text-gray-500 text-sm ml-1">/month</span>
+            </div>
+            <ul className="mb-6 space-y-2 flex-grow">
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Up to 15 Teachers</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Up to 150 Students</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Advanced Analytics</span>
+              </li>
+            </ul>
+            <div className="flex space-x-2">
+              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
+              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
+            </div>
+          </motion.div>
+
+          {/* Enterprise Plan */}
+          <motion.div
+            className="border border-gray-200 rounded-lg p-6 flex flex-col"
+            variants={cardVariants}
+            whileHover="hover"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Enterprise Plan</h3>
+              <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Premium</span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-gray-900">$199</span>
+              <span className="text-gray-500 text-sm ml-1">/month</span>
+            </div>
+            <ul className="mb-6 space-y-2 flex-grow">
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Unlimited Teachers</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Unlimited Students</span>
+              </li>
+              <li className="flex items-center">
+                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span className="text-gray-600">Premium Support</span>
+              </li>
+            </ul>
+            <div className="flex space-x-2">
+              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
+              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
     </div>
   );
 };

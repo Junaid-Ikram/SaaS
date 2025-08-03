@@ -1,5 +1,5 @@
-import React, { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
@@ -19,6 +19,7 @@ const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const AcademySubscription = lazy(() => import('./pages/AcademySubscription'));
 
 // Role-specific dashboards - these will be created later
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard').catch(() => ({ default: () => <div className="p-8">Super Admin Dashboard - Coming Soon</div> })));
@@ -40,6 +41,24 @@ const LoadingSpinner = () => (
 const AppContent = () => {
   const { user, userRole, loading, dbInitialized, setDatabaseInitialized } = useAuth();
   const navigate = useNavigate();
+  
+  // Function to get dashboard link based on user role
+  const getDashboardLink = () => {
+    if (!userRole) return '/dashboard';
+    
+    switch (userRole) {
+      case 'super_admin':
+        return '/super-admin/dashboard';
+      case 'academy_owner':
+        return '/academy/dashboard';
+      case 'teacher':
+        return '/teacher/dashboard';
+      case 'student':
+        return '/student/dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
   
   useEffect(() => {
     // Initialize database tables if needed
@@ -94,6 +113,12 @@ const AppContent = () => {
             <Route path="/academy/dashboard" element={
               <RoleBasedRoute requiredRole="academy_owner">
                 <AcademyDashboard />
+              </RoleBasedRoute>
+            } />
+            
+            <Route path="/academy/subscription" element={
+              <RoleBasedRoute requiredRole="academy_owner">
+                <AcademySubscription />
               </RoleBasedRoute>
             } />
             

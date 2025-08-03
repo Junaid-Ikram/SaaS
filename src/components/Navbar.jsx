@@ -84,39 +84,44 @@ const Navbar = () => {
             </motion.div>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/"
-                    className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                  >
-                    Home
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/features"
-                    className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                  >
-                    Features
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/pricing"
-                    className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                  >
-                    Pricing
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link
-                    to="/contact"
-                    className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                  >
-                    Contact
-                  </Link>
-                </motion.div>
-                {user && userRole && (
+                {!user ? (
+                  // Public navigation links - only shown to non-authenticated users
+                  <>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/"
+                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
+                      >
+                        Home
+                      </Link>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/features"
+                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
+                      >
+                        Features
+                      </Link>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/pricing"
+                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
+                      >
+                        Pricing
+                      </Link>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/contact"
+                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
+                      >
+                        Contact
+                      </Link>
+                    </motion.div>
+                  </>
+                ) : (
+                  // Dashboard link - only shown to authenticated users
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Link
                       to={getDashboardLink()}
@@ -142,6 +147,19 @@ const Navbar = () => {
                       </span>
                     )}
                   </div>
+                  {userRole === 'academy_owner' && (
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                      <Link
+                        to="/academy/subscription"
+                        className="text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-primary-600 hover:border-primary-500 hover:bg-primary-600 hover:bg-opacity-20 flex items-center"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span>Subscription</span>
+                      </Link>
+                    </motion.div>
+                  )}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
@@ -239,39 +257,44 @@ const Navbar = () => {
             className="md:hidden bg-primary-700 shadow-lg"
           >
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  to="/"
-                  className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                >
-                  <span className="mr-2">🏠</span> Home
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  to="/features"
-                  className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                >
-                  <span className="mr-2">✨</span> Features
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  to="/pricing"
-                  className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                >
-                  <span className="mr-2">💰</span> Pricing
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  to="/contact"
-                  className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                >
-                  <span className="mr-2">📞</span> Contact
-                </Link>
-              </motion.div>
-              {user && userRole && (
+              {!user ? (
+                // Public navigation links - only shown to non-authenticated users
+                <>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/"
+                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                    >
+                      <span className="mr-2">🏠</span> Home
+                    </Link>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/features"
+                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                    >
+                      <span className="mr-2">✨</span> Features
+                    </Link>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/pricing"
+                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                    >
+                      <span className="mr-2">💰</span> Pricing
+                    </Link>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Link
+                      to="/contact"
+                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                    >
+                      <span className="mr-2">📞</span> Contact
+                    </Link>
+                  </motion.div>
+                </>
+              ) : (
+                // Dashboard link - only shown to authenticated users
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Link
                     to={getDashboardLink()}
@@ -294,6 +317,19 @@ const Navbar = () => {
                       </span>
                     )}
                   </div>
+                  {userRole === 'academy_owner' && (
+                    <motion.div whileTap={{ scale: 0.98 }}>
+                      <Link
+                        to="/academy/subscription"
+                        className="w-full text-left text-white hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Manage Subscription
+                      </Link>
+                    </motion.div>
+                  )}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={signOut}

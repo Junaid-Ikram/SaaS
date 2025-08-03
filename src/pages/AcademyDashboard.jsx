@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../utils/supabase';
+import SubscriptionEnforcement from '../components/SubscriptionEnforcement';
 
 const AcademyDashboard = () => {
   const { user, userDetails } = useAuth();
@@ -224,7 +225,8 @@ const AcademyDashboard = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <SubscriptionEnforcement limits={{ teachers: 5, students: 50 }}>
+      <div className="container mx-auto px-4 py-8">
       <motion.div
         className="mb-8"
         initial={{ opacity: 0, y: -20 }}
@@ -458,7 +460,18 @@ const AcademyDashboard = () => {
             transition={{ delay: 0.3 }}
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">              
+              <motion.button
+                className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex flex-col items-center justify-center text-center"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.href = '/academy/subscription'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+                <span className="font-medium text-gray-800">Manage Subscription</span>
+              </motion.button>
               <motion.button
                 className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex flex-col items-center justify-center text-center"
                 whileHover={{ scale: 1.05 }}
@@ -622,6 +635,7 @@ const AcademyDashboard = () => {
         </motion.div>
       )}
     </div>
+    </SubscriptionEnforcement>
   );
 };
 
