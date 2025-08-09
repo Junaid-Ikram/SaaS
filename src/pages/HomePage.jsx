@@ -73,10 +73,10 @@ const HomePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary-900 via-secondary-900 to-primary-800 text-white pt-24 pb-16 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-primary-800 via-primary-700 to-primary-900 text-white pt-24 pb-16 relative overflow-hidden">
         {/* Animated background elements */}
         <motion.div 
-          className="absolute top-20 left-10 w-64 h-64 bg-secondary-500 rounded-full opacity-10"
+          className="absolute top-20 left-10 w-64 h-64 bg-primary-400 rounded-full opacity-10 blur-xl"
           animate={{ 
             scale: [1, 1.2, 1],
             x: [0, 20, 0],
@@ -85,13 +85,22 @@ const HomePage = () => {
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute bottom-10 right-10 w-96 h-96 bg-primary-500 rounded-full opacity-10"
+          className="absolute bottom-10 right-10 w-96 h-96 bg-primary-300 rounded-full opacity-10 blur-xl"
           animate={{ 
             scale: [1, 1.3, 1],
             x: [0, -30, 0],
             y: [0, 30, 0],
           }}
           transition={{ duration: 10, repeat: Infinity }}
+        />
+        <motion.div 
+          className="absolute top-40 right-20 w-32 h-32 bg-white rounded-full opacity-5 blur-lg"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            x: [0, -10, 0],
+            y: [0, 10, 0],
+          }}
+          transition={{ duration: 6, repeat: Infinity }}
         />
         
         <div className="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:px-8 relative z-10">
@@ -103,11 +112,16 @@ const HomePage = () => {
             >
               <h1 className="text-4xl tracking-tight font-extrabold sm:text-5xl md:text-6xl">
                 <span className="block">Transform Education with</span>
-                <span className="block bg-gradient-to-r from-green-300 to-secondary-300 bg-clip-text text-transparent">Academy Platform</span>
+                <span className="block bg-gradient-to-r from-white to-primary-200 bg-clip-text text-transparent drop-shadow-sm">Academy Platform</span>
               </h1>
-              <p className="mt-3 max-w-md mx-auto text-base text-primary-100 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-                The complete solution for academies, teachers, and students. Manage your educational institution with ease and elevate the learning experience.
-              </p>
+              <div className="relative">
+                <div className="absolute inset-0 flex justify-center">
+                  <div className="w-1/2 h-1/2 bg-primary-400 opacity-20 blur-3xl rounded-full"></div>
+                </div>
+                <p className="mt-3 max-w-md mx-auto text-base text-white sm:text-lg md:mt-5 md:text-xl md:max-w-3xl relative">
+                  The complete solution for academies, teachers, and students. Manage your educational institution with ease and elevate the learning experience.
+                </p>
+              </div>
             </motion.div>
             
             <motion.div 
@@ -117,82 +131,97 @@ const HomePage = () => {
               transition={{ delay: 0.5, duration: 0.5 }}
             >
               <motion.div 
-                className="rounded-md shadow"
-                whileHover={{ scale: 1.05, boxShadow: "0px 8px 20px rgba(0, 0, 0, 0.2)" }}
+                className="rounded-md shadow-xl"
+                whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
-                animate={{
-                  boxShadow: ["0px 0px 0px rgba(79, 70, 229, 0.2)", "0px 0px 20px rgba(79, 70, 229, 0.6)", "0px 0px 0px rgba(79, 70, 229, 0.2)"],
-                }}
-                transition={{ duration: 2, repeat: Infinity }}
               >
-                <Link
-                  to="/register"
-                  state={{ initialTab: 'academy' }}
-                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-secondary-600 hover:from-green-700 hover:to-secondary-700 md:py-3 md:text-base md:px-8 transition-all duration-200 shadow-lg"
-                >
-                  <span>Create Your Academy</span>
-                  <FaArrowRight className="ml-2 animate-pulse" />
-                </Link>
+                <div className="relative group overflow-hidden rounded-md">
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary-400 to-primary-600 rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
+                  <Link
+                    to="/register"
+                    state={{ initialTab: 'academy' }}
+                    className="relative w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 md:py-3 md:text-base md:px-8 transition-all duration-200 shadow-lg"
+                  >
+                    <span>Create Your Academy</span>
+                    <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                  </Link>
+                </div>
               </motion.div>
               <motion.div 
-                className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3"
-                whileHover={{ scale: 1.05 }}
+                className="mt-3 rounded-md shadow-md sm:mt-0 sm:ml-3"
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link
-                  to="/features"
-                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
-                >
-                  Explore Features
-                </Link>
+                <div className="relative group overflow-hidden rounded-md">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <Link
+                    to="/features"
+                    className="relative w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-700 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
+                  >
+                    <span>Explore Features</span>
+                  </Link>
+                </div>
               </motion.div>
               <motion.div 
-                className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3"
-                whileHover={{ scale: 1.05 }}
+                className="mt-3 rounded-md shadow-md sm:mt-0 sm:ml-3"
+                whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Link
-                  to="/login"
-                  className="w-full flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md text-primary-600 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
-                >
-                  Sign in
-                </Link>
+                <div className="relative group overflow-hidden rounded-md">
+                  <div className="absolute inset-0 bg-gradient-to-r from-gray-100 to-white opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+                  <Link
+                    to="/login"
+                    className="relative w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-primary-700 bg-white hover:bg-gray-50 md:py-3 md:text-base md:px-8 transition-all duration-200"
+                  >
+                    <span>Sign in</span>
+                  </Link>
+                </div>
               </motion.div>
             </motion.div>
             
             <motion.div
-              className="mt-8 max-w-md mx-auto bg-white rounded-lg shadow-lg p-6"
+              className="mt-10 max-w-md mx-auto bg-white/90 backdrop-blur-sm rounded-xl shadow-xl p-6 border border-white/20"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8, duration: 0.5 }}
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4">What's included in the trial</h3>
-              <ul className="space-y-3">
-                <li className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M9 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-4V3a1 1 0 10-2 0v1H9zM4 9V6h12v3H4zm0 4h12v3H4v-3z" clipRule="evenodd"></path></svg>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Trial Features</h3>
+                <span className="px-3 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded-full">Free Access</span>
+              </div>
+              <ul className="space-y-4">
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 bg-primary-100 text-primary-600 rounded-full p-2 mt-1">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
                   </div>
                   <div className="ml-3">
                     <p className="text-base font-medium text-gray-900">Secure Authentication</p>
-                    <p className="text-sm text-gray-500">Role-based access control with JWT tokens</p>
+                    <p className="text-sm text-gray-600">Role-based access control with JWT tokens</p>
                   </div>
                 </li>
-                <li className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path></svg>
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 bg-primary-100 text-primary-600 rounded-full p-2 mt-1">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
                   </div>
                   <div className="ml-3">
                     <p className="text-base font-medium text-gray-900">Email Notifications</p>
-                    <p className="text-sm text-gray-500">Automated emails for user approvals and updates</p>
+                    <p className="text-sm text-gray-600">Automated emails for user approvals and updates</p>
                   </div>
                 </li>
-                <li className="flex items-center">
-                  <div className="flex-shrink-0 bg-green-100 text-green-600 rounded-full p-2">
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h14a1 1 0 001-1V4a1 1 0 00-1-1H3zm10 2H7v2h6V5zm0 4H7v2h6V9zm0 4H7v2h6v-2z" clipRule="evenodd"></path></svg>
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 bg-primary-100 text-primary-600 rounded-full p-2 mt-1">
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
                   </div>
                   <div className="ml-3">
                     <p className="text-base font-medium text-gray-900">Analytics Dashboard</p>
-                    <p className="text-sm text-gray-500">Comprehensive insights for all user roles</p>
+                    <p className="text-sm text-gray-600">Comprehensive insights for all user roles</p>
                   </div>
                 </li>
               </ul>
@@ -222,31 +251,40 @@ const HomePage = () => {
               <motion.div 
                 variants={scaleIn}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
+                className="bg-white/15 rounded-xl p-5 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/30 transition-all duration-300 shadow-lg group"
               >
                 <Link to="/register" state={{ initialTab: 'academy' }} className="flex flex-col items-center text-white">
-                  <FaSchool className="h-8 w-8 mb-2 text-green-300" />
-                  <span className="text-sm font-medium">Academy Owner</span>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <FaSchool className="h-8 w-8 mb-3 text-white relative z-10" />
+                  </div>
+                  <span className="text-sm font-medium group-hover:text-primary-200 transition-colors duration-300">Academy Owner</span>
                 </Link>
               </motion.div>
               <motion.div 
                 variants={scaleIn}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
+                className="bg-white/15 rounded-xl p-5 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/30 transition-all duration-300 shadow-lg group"
               >
                 <Link to="/register" state={{ initialTab: 'teacher' }} className="flex flex-col items-center text-white">
-                  <FaChalkboardTeacher className="h-8 w-8 mb-2 text-green-300" />
-                  <span className="text-sm font-medium">Teacher</span>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <FaChalkboardTeacher className="h-8 w-8 mb-3 text-white relative z-10" />
+                  </div>
+                  <span className="text-sm font-medium group-hover:text-primary-200 transition-colors duration-300">Teacher</span>
                 </Link>
               </motion.div>
               <motion.div 
                 variants={scaleIn}
                 whileHover={{ scale: 1.05, y: -5 }}
-                className="bg-white bg-opacity-10 rounded-lg p-4 backdrop-filter backdrop-blur-sm border border-white border-opacity-20 hover:bg-opacity-20 transition-all duration-300"
+                className="bg-white/15 rounded-xl p-5 backdrop-blur-sm border border-white/20 hover:bg-white/25 hover:border-white/30 transition-all duration-300 shadow-lg group"
               >
                 <Link to="/register" state={{ initialTab: 'student' }} className="flex flex-col items-center text-white">
-                  <FaGraduationCap className="h-8 w-8 mb-2 text-green-300" />
-                  <span className="text-sm font-medium">Student</span>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-20 blur-sm group-hover:opacity-40 transition-opacity duration-300"></div>
+                    <FaGraduationCap className="h-8 w-8 mb-3 text-white relative z-10" />
+                  </div>
+                  <span className="text-sm font-medium group-hover:text-primary-200 transition-colors duration-300">Student</span>
                 </Link>
               </motion.div>
             </motion.div>
@@ -255,16 +293,23 @@ const HomePage = () => {
       </div>
 
       {/* Role-based Features Section */}
-      <AnimatedSection className="py-16 bg-white">
+      <AnimatedSection className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="lg:text-center">
-            <h2 className="text-base text-green-600 font-semibold tracking-wide uppercase">Role-Based Platform</h2>
-            <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+            <div className="inline-block">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                <span className="flex h-2 w-2 rounded-full bg-primary-600 mr-2"></span>
+                Role-Based Platform
+              </span>
+            </div>
+            <p className="mt-5 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
               Tailored for Every Educational Role
             </p>
-            <p className="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-              Our platform provides specialized tools for academy owners, teachers, and students, creating a seamless educational ecosystem.
-            </p>
+            <div className="mt-4 max-w-3xl mx-auto">
+              <p className="text-xl text-gray-600 lg:mx-auto">
+                Our platform provides specialized tools for academy owners, teachers, and students, creating a seamless educational ecosystem.
+              </p>
+            </div>
           </div>
 
           <motion.div 
@@ -276,32 +321,32 @@ const HomePage = () => {
           >
             <div className="space-y-12 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-8">
               {/* Academy Owners */}
-              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-600 text-white shadow-lg">
+              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:border-primary-100">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 group-hover:scale-110 transition-transform duration-300">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg">
                     <FaSchool className="h-8 w-8" />
                   </div>
                 </div>
                 <div className="mt-8 text-center">
-                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4">Academy Owners</h3>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4 group-hover:text-primary-600 transition-colors duration-300">Academy Owners</h3>
                   <p className="mt-4 text-base text-gray-500">
                     Manage your entire academy, approve teachers and students, track performance, and grow your educational business.
                   </p>
                   <ul className="mt-6 text-sm text-gray-500 space-y-2">
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>User approval system</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Academy analytics</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>User management</span>
@@ -311,32 +356,32 @@ const HomePage = () => {
               </motion.div>
 
               {/* Teachers */}
-              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-600 text-white shadow-lg">
+              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:border-primary-100">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 group-hover:scale-110 transition-transform duration-300">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg">
                     <FaChalkboardTeacher className="h-8 w-8" />
                   </div>
                 </div>
                 <div className="mt-8 text-center">
-                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4">Teachers</h3>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4 group-hover:text-primary-600 transition-colors duration-300">Teachers</h3>
                   <p className="mt-4 text-base text-gray-500">
                     Create and manage classes, track student progress, and deliver engaging educational content.
                   </p>
                   <ul className="mt-6 text-sm text-gray-500 space-y-2">
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Class management</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Student progress tracking</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Content creation tools</span>
@@ -346,32 +391,32 @@ const HomePage = () => {
               </motion.div>
 
               {/* Students */}
-              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-gray-100">
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-500 text-white shadow-lg">
+              <motion.div variants={featureVariant} className="relative p-8 bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 group hover:border-primary-100">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 group-hover:scale-110 transition-transform duration-300">
+                  <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-lg">
                     <FaGraduationCap className="h-8 w-8" />
                   </div>
                 </div>
                 <div className="mt-8 text-center">
-                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4">Students</h3>
+                  <h3 className="text-xl leading-6 font-bold text-gray-900 mt-4 group-hover:text-primary-600 transition-colors duration-300">Students</h3>
                   <p className="mt-4 text-base text-gray-500">
                     Access classes, track your progress, and engage with educational content in an intuitive interface.
                   </p>
                   <ul className="mt-6 text-sm text-gray-500 space-y-2">
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Class enrollment</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Progress dashboard</span>
                     </li>
                     <li className="flex items-center justify-center">
-                      <svg className="h-5 w-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <svg className="h-5 w-5 text-primary-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                       </svg>
                       <span>Learning resources</span>
@@ -385,119 +430,96 @@ const HomePage = () => {
       </AnimatedSection>
 
       
-      <AnimatedSection className="py-16 bg-gradient-to-r from-green-100 to-teal-100">
+      <AnimatedSection className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="lg:flex lg:items-center lg:justify-between">
-            <div className="lg:w-1/2">
-              <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
-                
-                <span className="block text-green-600">No credit card required</span>
-              </h2>
-              <p className="mt-4 text-lg text-gray-500">
-                
+          <div className="lg:text-center">
+            <div className="inline-block">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                <span className="flex h-2 w-2 rounded-full bg-primary-600 mr-2"></span>
+                Free Trial
+              </span>
+            </div>
+            <p className="mt-5 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+              No Credit Card Required
+            </p>
+            <div className="mt-4 max-w-3xl mx-auto">
+              <p className="text-xl text-gray-600 lg:mx-auto">
+                Start your 14-day free trial today and experience all the features of our platform without any commitment.
               </p>
-              <div className="mt-8 space-y-4">
-                <div className="flex items-center">
-                  <svg className="h-6 w-6 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-700">Full access to all features</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="h-6 w-6 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-700">Unlimited users during trial</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="h-6 w-6 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span className="text-gray-700">Priority support</span>
+            </div>
+          </div>
+
+          <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+            <div className="relative p-6 bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-all duration-300 group">
+              <div className="absolute -top-5 left-6">
+                <div className="flex items-center justify-center h-14 w-14 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <FaCheckCircle className="h-6 w-6" />
                 </div>
               </div>
-              <div className="mt-8">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }} 
-                  whileTap={{ scale: 0.95 }}
-                  animate={pulseAnimation}
-                  className="inline-block"
-                >
-                  <Link
-                    to="/register"
-                    className="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 md:py-4 md:text-lg md:px-8 shadow-md transition-all duration-200 flex items-center"
-                  >
-                    
-                    <FaArrowRight className="ml-2" />
-                  </Link>
-                </motion.div>
+              <div className="pt-10">
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-300">Full Access</h3>
+                <p className="mt-3 text-base text-gray-500">
+                  Get complete access to all features during your trial period with no limitations.
+                </p>
               </div>
             </div>
-            <div className="mt-10 lg:mt-0 lg:w-1/2">
-              <motion.div 
-                className="relative mx-auto w-full rounded-lg shadow-lg overflow-hidden"
-                initial={{ opacity: 0, x: 50 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-                viewport={{ once: true }}
+
+            <div className="relative p-6 bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-all duration-300 group">
+              <div className="absolute -top-5 left-6">
+                <div className="flex items-center justify-center h-14 w-14 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <FaUserPlus className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="pt-10">
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-300">Unlimited Users</h3>
+                <p className="mt-3 text-base text-gray-500">
+                  Add as many teachers and students as you need during the trial period.
+                </p>
+              </div>
+            </div>
+
+            <div className="relative p-6 bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-primary-100 transition-all duration-300 group">
+              <div className="absolute -top-5 left-6">
+                <div className="flex items-center justify-center h-14 w-14 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-white shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <FaCheckCircle className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="pt-10">
+                <h3 className="text-xl font-bold text-gray-900 group-hover:text-primary-600 transition-colors duration-300">Priority Support</h3>
+                <p className="mt-3 text-base text-gray-500">
+                  Get priority support from our team throughout your trial period.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-16 flex justify-center">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              animate={pulseAnimation}
+              className="inline-block"
+            >
+              <Link
+                to="/register"
+                className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-full overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <div className="bg-white p-8 rounded-lg border border-gray-200">
-                  <div className="text-center">
-                    <h3 className="text-2xl font-bold text-gray-900">What's included in the trial</h3>
-                    <div className="mt-6 space-y-6">
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="ml-4 text-left">
-                          <h4 className="text-lg font-medium text-gray-900">Secure Authentication</h4>
-                          <p className="mt-2 text-base text-gray-500">Role-based access control with JWT tokens</p>
-                        </div>
-                      </div>
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="ml-4 text-left">
-                          <h4 className="text-lg font-medium text-gray-900">Email Notifications</h4>
-                          <p className="mt-2 text-base text-gray-500">Automated emails for user approvals and updates</p>
-                        </div>
-                      </div>
-                      <div className="flex">
-                        <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                          </div>
-                        </div>
-                        <div className="ml-4 text-left">
-                          <h4 className="text-lg font-medium text-gray-900">Analytics Dashboard</h4>
-                          <p className="mt-2 text-base text-gray-500">Comprehensive insights for all user roles</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </div>
+                <span className="absolute inset-0 w-full h-full bg-gradient-to-br from-primary-400 to-primary-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                <span className="relative flex items-center">
+                  Start Your Free Trial
+                  <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
+              </Link>
+            </motion.div>
           </div>
         </div>
       </AnimatedSection>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-green-800 to-teal-800 text-white relative overflow-hidden">
+      <section className="relative py-24 overflow-hidden bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900 text-white">
         {/* Animated background elements */}
         <motion.div 
-          className="absolute top-10 right-10 w-64 h-64 bg-purple-500 rounded-full opacity-10"
+          className="absolute top-10 right-10 w-80 h-80 bg-primary-500 rounded-full opacity-10 blur-xl"
           animate={{ 
             scale: [1, 1.2, 1],
             x: [0, -20, 0],
@@ -506,7 +528,7 @@ const HomePage = () => {
           transition={{ duration: 8, repeat: Infinity }}
         />
         <motion.div 
-          className="absolute bottom-10 left-10 w-96 h-96 bg-green-500 rounded-full opacity-10"
+          className="absolute bottom-10 left-10 w-96 h-96 bg-primary-400 rounded-full opacity-10 blur-xl"
           animate={{ 
             scale: [1, 1.3, 1],
             x: [0, 30, 0],
@@ -514,113 +536,126 @@ const HomePage = () => {
           }}
           transition={{ duration: 10, repeat: Infinity }}
         />
+        <motion.div 
+          className="absolute left-1/2 top-1/2 w-[30rem] h-[30rem] bg-primary-300 rounded-full opacity-5 blur-xl"
+          animate={{ 
+            scale: [1, 1.1, 1],
+            rotate: [0, 10, 0],
+          }}
+          transition={{ duration: 12, repeat: Infinity }}
+        />
         
-        <div className="max-w-2xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8 relative z-10">
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-extrabold sm:text-4xl">
+            <h2 className="text-4xl font-extrabold sm:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-white to-primary-200">
               <span className="block">Ready to transform your academy?</span>
               <span className="block mt-2">Get started today.</span>
             </h2>
-            <p className="mt-4 text-lg leading-6 text-green-100">
+            <p className="mt-6 text-xl leading-7 text-primary-100 max-w-3xl mx-auto">
               Join thousands of educational institutions that have elevated their teaching and learning experience with our platform.
             </p>
             
             {/* Role-based signup buttons */}
-            <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-3 max-w-5xl mx-auto">
               <motion.div 
-                className="rounded-lg overflow-hidden shadow-lg"
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
+                className="rounded-xl overflow-hidden shadow-xl"
+                whileHover={{ scale: 1.03, y: -5 }}
+                whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
+                transition={{ duration: 0.5 }}
                 viewport={{ once: true }}
               >
                 <Link
                   to="/register"
-                  className="w-full flex flex-col items-center justify-center px-4 py-4 bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm hover:bg-opacity-20 transition-all duration-200 h-full"
+                  state={{ initialTab: 'academy' }}
+                  className="w-full flex flex-col items-center justify-center px-6 py-8 bg-white/10 backdrop-blur-sm hover:bg-white/15 border border-white/20 hover:border-primary-300/30 transition-all duration-300 h-full rounded-xl"
                 >
-                  <FaSchool className="h-8 w-8 mb-2 text-green-300" />
-                  <span className="text-white font-medium">Academy Owner</span>
-                  <span className="text-xs text-green-200 mt-1">Create your academy</span>
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-30 blur-md group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <FaSchool className="h-10 w-10 text-primary-200 relative z-10" />
+                  </div>
+                  <span className="text-white font-bold text-lg">Academy Owner</span>
+                  <span className="text-sm text-primary-200 mt-2">Create your academy</span>
                 </Link>
               </motion.div>
               
               <motion.div 
-                className="rounded-lg overflow-hidden shadow-lg"
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
+                className="rounded-xl overflow-hidden shadow-xl"
+                whileHover={{ scale: 1.03, y: -5 }}
+                whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
                 viewport={{ once: true }}
               >
                 <Link
                   to="/register"
-                  className="w-full flex flex-col items-center justify-center px-4 py-4 bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm hover:bg-opacity-20 transition-all duration-200 h-full"
+                  state={{ initialTab: 'teacher' }}
+                  className="w-full flex flex-col items-center justify-center px-6 py-8 bg-white/10 backdrop-blur-sm hover:bg-white/15 border border-white/20 hover:border-primary-300/30 transition-all duration-300 h-full rounded-xl"
                 >
-                  <FaChalkboardTeacher className="h-8 w-8 mb-2 text-purple-300" />
-                  <span className="text-white font-medium">Teacher</span>
-                  <span className="text-xs text-green-200 mt-1">Join an academy</span>
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-30 blur-md group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <FaChalkboardTeacher className="h-10 w-10 text-primary-200 relative z-10" />
+                  </div>
+                  <span className="text-white font-bold text-lg">Teacher</span>
+                  <span className="text-sm text-primary-200 mt-2">Join an academy</span>
                 </Link>
               </motion.div>
               
               <motion.div 
-                className="rounded-lg overflow-hidden shadow-lg"
-                whileHover={{ scale: 1.05, y: -5 }}
-                whileTap={{ scale: 0.95 }}
+                className="rounded-xl overflow-hidden shadow-xl"
+                whileHover={{ scale: 1.03, y: -5 }}
+                whileTap={{ scale: 0.97 }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
                 viewport={{ once: true }}
               >
                 <Link
                   to="/register"
-                  className="w-full flex flex-col items-center justify-center px-4 py-4 bg-white bg-opacity-10 backdrop-filter backdrop-blur-sm hover:bg-opacity-20 transition-all duration-200 h-full"
+                  state={{ initialTab: 'student' }}
+                  className="w-full flex flex-col items-center justify-center px-6 py-8 bg-white/10 backdrop-blur-sm hover:bg-white/15 border border-white/20 hover:border-primary-300/30 transition-all duration-300 h-full rounded-xl"
                 >
-                  <FaGraduationCap className="h-8 w-8 mb-2 text-green-300" />
-                  <span className="text-white font-medium">Student</span>
-                  <span className="text-xs text-green-200 mt-1">Enroll in classes</span>
+                  <div className="relative mb-4">
+                    <div className="absolute inset-0 bg-primary-400 rounded-full opacity-30 blur-md group-hover:opacity-50 transition-opacity duration-300"></div>
+                    <FaGraduationCap className="h-10 w-10 text-primary-200 relative z-10" />
+                  </div>
+                  <span className="text-white font-bold text-lg">Student</span>
+                  <span className="text-sm text-primary-200 mt-2">Enroll in classes</span>
                 </Link>
               </motion.div>
             </div>
             
             <motion.div 
-              className="mt-10 w-full sm:w-auto inline-block"
+              className="mt-14 inline-block"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              animate={{
-                boxShadow: ["0px 0px 0px rgba(255, 255, 255, 0.2)", "0px 0px 20px rgba(255, 255, 255, 0.5)", "0px 0px 0px rgba(255, 255, 255, 0.2)"],
-              }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Link
-                to="/register"
-                className="w-full flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-md text-green-700 bg-white hover:bg-green-50 sm:w-auto transition-all duration-200 shadow-lg"
-              >
-                <FaUserPlus className="mr-2" />
-                <span>Sign up for free</span>
-                <FaArrowRight className="ml-2 animate-pulse" />
-              </Link>
-            </motion.div>
-            
-            <motion.p 
-              className="mt-4 text-sm text-green-200"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
               viewport={{ once: true }}
             >
-              
-            </motion.p>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-400 to-primary-300 rounded-full opacity-50 blur-md group-hover:opacity-75 transition-all duration-300"></div>
+                <Link
+                  to="/register"
+                  className="relative flex items-center justify-center px-8 py-4 text-lg font-medium rounded-full text-primary-900 bg-white hover:bg-primary-50 transition-all duration-300 shadow-lg"
+                >
+                  <FaUserPlus className="mr-2" />
+                  <span>Sign up for free</span>
+                  <FaArrowRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                </Link>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

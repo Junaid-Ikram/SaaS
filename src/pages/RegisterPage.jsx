@@ -42,11 +42,16 @@ const RegisterPage = () => {
         setLoadingAcademies(true);
         setAcademyError(null);
         
+        console.log('Starting to fetch academies in RegisterPage...');
         const result = await fetchAcademies();
+        console.log('Fetch academies result:', result);
+        
         if (result.success) {
           setAcademyIdList(result.academies || []);
+          console.log('Academy list set to:', result.academies);
           if (result.academies.length === 0) {
-            console.log('No academies available for selection');
+            console.log('No academies available for selection - check if any academies have status="active"');
+            setAcademyError('No active academies found. Please contact an administrator.');
           }
         } else {
           console.error('Error fetching academy IDs:', result.error);

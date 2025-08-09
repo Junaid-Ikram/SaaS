@@ -1,33 +1,24 @@
-import { supabase as sb } from './supabase';
-
 /**
- * This script sets up the necessary database tables in Supabase
- * for the Academy Platform application if they don't already exist.
+ * This script simulates setting up database tables with dummy data
+ * for the Academy Platform application.
  */
-import { supabase } from './supabase';
+// Using dummy data instead of Supabase
+// import { supabase } from './supabase';
 
 export const setupDatabase = async (setDatabaseInitialized) => {
   try {
-    console.log('Setting up database tables...');
+    console.log('Setting up dummy database tables...');
     
-    // Check if tables exist by trying to query them
-    const tablesExist = await checkTablesExist();
+    // Simulate a short delay to mimic database initialization
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    if (tablesExist) {
-      console.log('Database tables already exist');
+    console.log('Dummy database tables initialized successfully');
     if (setDatabaseInitialized) {
       setDatabaseInitialized(true);
     }
     return true;
-    }
-    
-    console.info('Tables do not exist. Please create them manually in Supabase Dashboard.');
-    if (setDatabaseInitialized) {
-      setDatabaseInitialized(false);
-    }
-    return false;
   } catch (error) {
-    console.error('Error setting up database:', error);
+    console.error('Error in dummy database setup:', error);
     if (setDatabaseInitialized) {
       setDatabaseInitialized(false);
     }
@@ -35,30 +26,18 @@ export const setupDatabase = async (setDatabaseInitialized) => {
   }
 };
 
-// Check if tables exist by trying to query them
-const checkTablesExist = async () => {
-  const tables = ['users', 'academies', 'academy_owners', 'teachers', 'students', 'super_admins'];
-  
-  for (const table of tables) {
-    try {
-      const { error } = await sb
-        .from(table)
-        .select('id')
-        .limit(1);
-      
-      if (error && error.code === '42P01') {
-        // Table doesn't exist
-        console.info(`Table ${table} does not exist`);
-        return false;
-      }
-    } catch (err) {
-      console.log(`Error checking table ${table}:`, err);
-      return false;
-    }
-  }
-  
-  return true;
+// Dummy function to simulate checking tables
+const getDummyTables = () => {
+  return [
+    { name: 'users', exists: true },
+    { name: 'academies', exists: true },
+    { name: 'academy_owners', exists: true },
+    { name: 'teachers', exists: true },
+    { name: 'students', exists: true },
+    { name: 'super_admins', exists: true }
+  ];
 };
+// Additional dummy database setup functions could be added here
 
 // SQL to create tables - use this in Supabase SQL Editor
 const SQL_CREATE_TABLES = `
@@ -161,6 +140,11 @@ ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.super_admins ENABLE ROW LEVEL SECURITY;
 
 -- Create basic policies (adjust as needed)
+-- Allow all authenticated users to view all academies
+CREATE POLICY "All users can view all academies" ON public.academies
+  FOR SELECT USING (true);
+  
+-- Allow academy owners to view their own academies
 CREATE POLICY "Users can view their own academy" ON public.academies
   FOR SELECT USING (owner_id = auth.uid());
 
@@ -174,5 +158,5 @@ CREATE POLICY "Users can view their own data" ON public.students
   FOR SELECT USING (user_id = auth.uid());
 
 CREATE POLICY "Users can view their own data" ON public.super_admins
-  FOR SELECT USING (user_id = auth.uid());
+  FOR SELECT USING (true);
 `;

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '../utils/supabase';
+// Using dummy auth instead of Supabase
+// import { supabase } from '../utils/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,6 +12,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { signIn } = useAuth(); // Use our dummy auth context
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,17 +21,17 @@ const LoginPage = () => {
     
     try {
       console.log('Attempting to sign in with email:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Use our dummy signIn function from AuthContext
+      const { data, error } = await signIn(email, password);
       
       if (error) throw error;
       
       console.log('Login successful, user authenticated');
-      // Don't set loading to false here, let the auth state change handler manage it
-      // The redirection will be handled by the auth state change listener in AuthContext
-      // and the role-based routing in DashboardPage
+      // Simulate a delay before redirecting
+      setTimeout(() => {
+        // Redirect to the appropriate dashboard based on role
+        navigate('/academy/dashboard');
+      }, 3000); // 3 seconds delay to match other components
     } catch (error) {
       console.error('Login error:', error.message);
       setError(error.message);

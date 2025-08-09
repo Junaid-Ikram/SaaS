@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../utils/supabase'; // Ensure this path is correct
+// Using dummy data instead of Supabase
+// import { supabase } from '../utils/supabase';
 
 const AuthContext = createContext();
 
@@ -17,251 +18,134 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    // Flag to prevent multiple calls during initialization
-    let isInitializing = true;
+    // Using dummy data instead of Supabase authentication
+    console.log('Setting up dummy authentication');
     
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state change detected:', event, session);
-      
-      // Handle sign in events
-      if (event === 'SIGNED_IN' && session) {
-        console.log('User signed in:', session.user.email);
-        setUser(session.user);
-        setLoading(true); // Keep loading true until user details are fetched
-        await fetchUserDetails(session.user.id);
-        console.log('isPending after fetchUserDetails:', isPending);
-        setLoading(false); // Set loading to false after user details are fetched
-      } 
-      // Handle sign out events
-      else if (event === 'SIGNED_OUT') {
-        console.log('User signed out event detected');
-        setUser(null);
-        setUserDetails(null);
-        setUserRole(null);
-        setIsPending(false);
-        console.log('User states cleared due to sign out event');
-        setLoading(false);
-      }
-    });
-
-    // Check initial session
-    const checkSession = async () => {
+    // Simulate a short delay to mimic authentication process
+    const simulateAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check:', session ? 'Session found' : 'No session');
+        // Create a dummy user
+        const dummyUser = {
+          id: '69123f68-b879-4b20-8a35-20746ed61a36',
+          email: 'junaidikram17@gmail.com',
+          user_metadata: { role: 'academy_owner' }
+        };
         
-        if (session) {
-          setUser(session.user);
-          await fetchUserDetails(session.user.id);
-          console.log('Session check completed with user details fetched');
-        } else {
-          console.log('No active session found');
-        }
+        // Set the user after a short delay
+        setTimeout(() => {
+          console.log('Dummy user authenticated:', dummyUser.email);
+          setUser(dummyUser);
+          
+          // Set dummy user details
+          const dummyUserDetails = {
+            id: 1,
+            user_id: dummyUser.id,
+            name: 'Junaid Ikram',
+            email: dummyUser.email,
+            academy_id: 1,
+            status: 'active',
+            created_at: '2023-01-01T00:00:00.000Z',
+            role: 'academy_owner'
+          };
+          
+          setUserDetails(dummyUserDetails);
+          setUserRole('academy_owner');
+          setIsPending(false);
+          setLoading(false);
+          console.log('Dummy user details set, loading complete');
+        }, 3000); // 3000ms (3 seconds) delay to simulate network and show loading state
       } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
+        console.error('Error in dummy auth:', error);
         setLoading(false);
-        isInitializing = false;
-        console.log('Initial loading completed, loading state set to false');
       }
     };
     
-    checkSession();
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    simulateAuth();
+    
+    // No cleanup needed for dummy auth
+    return () => {};
   }, []);
 
+  // Dummy function to replace real database queries
   const fetchUserDetails = async (userId) => {
     try {
-      // Check for super_admin role
-      console.log('Fetching user details for userId:', userId);
-
-      // Check for super_admin role
-      let { data: superAdminData, error: superAdminError } = await supabase
-        .from('super_admins')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (superAdminError && superAdminError.code !== 'PGRST116') {
-        console.error('Error fetching super_admin:', superAdminError.message);
-      }
-      if (superAdminData) {
-        console.log('Found super_admin data:', superAdminData);
-        setUserDetails(superAdminData);
-        setUserRole('super_admin');
-        console.log('Super Admin Status:', superAdminData.status);
-        const isPendingStatus = superAdminData.status === 'pending';
-        setIsPending(isPendingStatus);
-        console.log('Setting isPending to:', isPendingStatus);
-        return;
-      }
-
-      // Check for academy_owner role
-      let { data: academyOwnerData, error: academyOwnerError } = await supabase
-        .from('academy_owners')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (academyOwnerError && academyOwnerError.code !== 'PGRST116') {
-        console.error('Error fetching academy_owner:', academyOwnerError.message);
-      }
-      if (academyOwnerData) {
-        console.log('Found academy_owner data:', academyOwnerData);
-        setUserDetails(academyOwnerData);
-        setUserRole('academy_owner');
-        console.log('Academy Owner Status:', academyOwnerData.status);
-        // Academy owners should always be active once created
-        const isPendingStatus = false;
-        setIsPending(isPendingStatus);
-        console.log('Setting isPending to:', isPendingStatus);
-        return;
-      }
-
-      // Check for teacher role
-      let { data: teacherData, error: teacherError } = await supabase
-        .from('teachers')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (teacherError && teacherError.code !== 'PGRST116') {
-        console.error('Error fetching teacher:', teacherError.message);
-      }
-      if (teacherData) {
-        console.log('Found teacher data:', teacherData);
-        setUserDetails(teacherData);
-        setUserRole('teacher');
-        console.log('Teacher Status:', teacherData.status);
-        const isPendingStatus = teacherData.status === 'pending';
-        setIsPending(isPendingStatus);
-        console.log('Setting isPending to:', isPendingStatus);
-        return;
-      }
-
-      // Check for student role
-      let { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (studentError && studentError.code !== 'PGRST116') {
-        console.error('Error fetching student:', studentError.message);
-      }
-      if (studentData) {
-        console.log('Found student data:', studentData);
-        setUserDetails(studentData);
-        setUserRole('student');
-        console.log('Student Status:', studentData.status);
-        const isPendingStatus = studentData.status === 'pending';
-        setIsPending(isPendingStatus);
-        console.log('Setting isPending to:', isPendingStatus);
-        return;
-      }
-
-      console.log('No specific role found for user:', userId);
-      // If no specific role found, default to 'user'
-      setUserDetails(null);
-      setUserRole('user');
-      const isPendingStatus = false;
-      setIsPending(isPendingStatus);
-      console.log('Setting isPending to:', isPendingStatus, 'for default user role');
+      console.log('Fetching dummy user details for userId:', userId);
+      
+      // This function is now just a placeholder since we're using dummy data
+      // The actual user details are set directly in the useEffect
+      console.log('Using dummy data instead of real database queries');
+      
+      // No need to do anything here as we set the user details in the useEffect
+      return;
     } catch (error) {
-      console.error('Exception fetching user details:', error.message);
-      setUserDetails(null);
-      setUserRole(null);
-      const isPendingStatus = false;
-      setIsPending(isPendingStatus);
-      console.log('Setting isPending to:', isPendingStatus, 'due to error in fetchUserDetails');
+      console.error('Exception in dummy fetchUserDetails:', error.message);
+      // In a real app, we would handle errors properly
+      // For now, we'll just log them
     }
   };
 
   const registerAcademyOwner = async (email, password, fullName, academyName, contactNumber = null, academyAddress = null) => {
     try {
-      // Check if email is already registered
-      const { data: existingUsers, error: existingError } = await supabase
-        .from('academy_owners')
-        .select('email')
-        .eq('email', email);
-
-      if (existingError) {
-        console.error('Error checking existing user:', existingError.message, existingError.details);
-        throw existingError;
-      }
+      console.log('Registering dummy academy owner:', email);
+      
+      // Simulate checking if email is already registered
+      const existingUsers = [];
+      
+      // Simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       if (existingUsers && existingUsers.length > 0) {
         throw new Error('Email already registered');
       }
       
-      // Register the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName, academy_name: academyName, role: 'academy_owner' },
-        },
-      });
+      // Create dummy user data
+      console.log('Creating dummy user with email:', email);
       
-      if (authError) {
-        console.error('Auth error details:', authError);
-        throw authError;
-      }
-
-      if (authData?.user) {
-        // Create academy owner record
-        const { error: ownerError } = await supabase
-          .from('academy_owners')
-          .insert([{ 
-            user_id: authData.user.id, 
+      // Simulate a delay for registration
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create dummy auth data
+      const authData = {
+        user: {
+          id: 'dummy-user-id-' + Date.now(),
+          email,
+          user_metadata: { 
             full_name: fullName, 
-            email, 
-            phone: contactNumber, 
-            status: 'active' 
-          }]);
-          
-        if (ownerError) {
-          console.error('Owner insertion error:', ownerError.message, ownerError.details);
-          throw ownerError;
+            academy_name: academyName, 
+            role: 'academy_owner' 
+          }
         }
-        
-        // Create academy record
-        const { data: academyData, error: academyError } = await supabase
-          .from('academies')
-          .insert([{ 
-            name: academyName, 
-            owner_id: authData.user.id,
-            address: academyAddress,
-            status: 'active'
-          }])
-          .select();
-          
-        if (academyError) {
-          console.error('Academy creation error:', academyError.message, academyError.details);
-          throw academyError;
-        }
+      };
+      
+      console.log('Dummy user created:', authData.user);
+      
+      // Create dummy academy owner record
+      const dummyOwner = { 
+        user_id: authData.user.id, 
+        full_name: fullName, 
+        email, 
+        phone: contactNumber, 
+        status: 'active' 
+      };
+      
+      console.log('Dummy academy owner created:', dummyOwner);
+      
+      // Create dummy academy record
+      const academyData = [{ 
+        id: 'dummy-academy-id-' + Date.now(),
+        name: academyName, 
+        owner_id: authData.user.id,
+        address: academyAddress,
+        status: 'active'
+      }];
+      
+      console.log('Dummy academy created:', academyData);
 
-        // Also update the users table with the role
-        const { error: userUpdateError } = await supabase
-          .from('users')
-          .upsert([{
-            id: authData.user.id,
-            full_name: fullName,
-            email,
-            role: 'academy_owner'
-          }]);
-
-        if (userUpdateError) {
-          console.error('User update error:', userUpdateError.message);
-          throw userUpdateError;
-        }
-        
-        console.log('Academy created successfully:', academyData);
-        return { success: true, user: authData.user, academy: academyData?.[0] };
-      }
+      // Simulate updating the users table with the role
+      console.log('Simulating user update with role: academy_owner');
+      
+      console.log('Academy created successfully:', academyData);
+      return { success: true, user: authData.user, academy: academyData?.[0] };
     } catch (error) {
       console.error('Registration error:', {
         message: error.message,
@@ -274,75 +158,56 @@ export function AuthProvider({ children }) {
 
   const registerTeacher = async (email, password, fullName, academyId, specialization = null, experience = null, contactNumber = null) => {
     try {
-      console.log('Registering teacher with email:', email);
+      console.log('Registering dummy teacher with email:', email);
       console.log('Academy ID:', academyId);
       
-      // Check if email is already registered
-      const { data: existingUsers, error: existingError } = await supabase
-        .from('teachers')
-        .select('email')
-        .eq('email', email);
-
-      if (existingError) {
-        console.error('Error checking existing teacher:', existingError.message);
-        throw existingError;
-      }
+      // Simulate checking if email is already registered
+      const existingUsers = [];
+      
+      // Simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       if (existingUsers && existingUsers.length > 0) {
         throw new Error('Email already registered');
       }
       
-      // Register the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName, role: 'teacher' },
-        },
-      });
+      // Create dummy user data
+      console.log('Creating dummy teacher with email:', email);
       
-      if (authError) {
-        console.error('Auth error details:', authError);
-        throw authError;
-      }
-
-      if (authData?.user) {
-        // Create teacher record with pending status
-        const { error: teacherError } = await supabase
-          .from('teachers')
-          .insert([{ 
-            user_id: authData.user.id, 
+      // Simulate a delay for registration
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create dummy auth data
+      const authData = {
+        user: {
+          id: 'dummy-teacher-id-' + Date.now(),
+          email,
+          user_metadata: { 
             full_name: fullName, 
-            email, 
-            phone: contactNumber,
-            academy_id: academyId,
-            subjects: specialization ? [specialization] : [],
-            status: 'pending' // Set status to pending for academy owner approval
-          }]);
-          
-        if (teacherError) {
-          console.error('Teacher insertion error:', teacherError.message);
-          throw teacherError;
+            role: 'teacher' 
+          }
         }
+      };
+      
+      console.log('Dummy teacher user created:', authData.user);
+      
+      // Create dummy teacher record
+      const dummyTeacher = { 
+        user_id: authData.user.id, 
+        full_name: fullName, 
+        email, 
+        phone: contactNumber,
+        academy_id: academyId,
+        subjects: specialization ? [specialization] : [],
+        status: 'pending' // Set status to pending for academy owner approval
+      };
+      
+      console.log('Dummy teacher record created:', dummyTeacher);
+      
+      // Simulate updating the users table with the role
+      console.log('Simulating user update with role: teacher');
 
-        // Also update the users table with the role
-        const { error: userUpdateError } = await supabase
-          .from('users')
-          .upsert([{
-            id: authData.user.id,
-            full_name: fullName,
-            email,
-            role: 'teacher',
-            academy_id: academyId
-          }]);
-
-        if (userUpdateError) {
-          console.error('User update error:', userUpdateError.message);
-          throw userUpdateError;
-        }
-
-        return { success: true, user: authData.user };
-      }
+      return { success: true, user: authData.user };
     } catch (error) {
       console.error('Teacher registration error:', {
         message: error.message,
@@ -355,75 +220,56 @@ export function AuthProvider({ children }) {
 
   const registerStudent = async (email, password, fullName, academyId, gradeLevel = null, age = null, guardianContact = null) => {
     try {
-      console.log('Registering student with email:', email);
+      console.log('Registering dummy student with email:', email);
       console.log('Academy ID:', academyId);
       
-      // Check if email is already registered
-      const { data: existingUsers, error: existingError } = await supabase
-        .from('students')
-        .select('email')
-        .eq('email', email);
-
-      if (existingError) {
-        console.error('Error checking existing student:', existingError.message);
-        throw existingError;
-      }
+      // Simulate checking if email is already registered
+      const existingUsers = [];
+      
+      // Simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       if (existingUsers && existingUsers.length > 0) {
         throw new Error('Email already registered');
       }
       
-      // Register the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: fullName, role: 'student' },
-        },
-      });
+      // Create dummy user data
+      console.log('Creating dummy student with email:', email);
       
-      if (authError) {
-        console.error('Auth error details:', authError);
-        throw authError;
-      }
-
-      if (authData?.user) {
-        // Create student record with pending status
-        const { error: studentError } = await supabase
-          .from('students')
-          .insert([{ 
-            user_id: authData.user.id, 
+      // Simulate a delay for registration
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create dummy auth data
+      const authData = {
+        user: {
+          id: 'dummy-student-id-' + Date.now(),
+          email,
+          user_metadata: { 
             full_name: fullName, 
+            role: 'student' 
+          }
+        }
+      };
+      
+      console.log('Dummy student user created:', authData.user);
+      
+      // Create dummy student record
+      const dummyStudent = { 
+        user_id: authData.user.id, 
+        full_name: fullName, 
             email, 
             phone: guardianContact,
             academy_id: academyId,
             grade_level: gradeLevel,
             status: 'pending' // Set status to pending for academy owner approval
-          }]);
+          };
           
-        if (studentError) {
-          console.error('Student insertion error:', studentError.message);
-          throw studentError;
-        }
-
-        // Also update the users table with the role
-        const { error: userUpdateError } = await supabase
-          .from('users')
-          .upsert([{
-            id: authData.user.id,
-            full_name: fullName,
-            email,
-            role: 'student',
-            academy_id: academyId
-          }]);
-
-        if (userUpdateError) {
-          console.error('User update error:', userUpdateError.message);
-          throw userUpdateError;
-        }
+        console.log('Dummy student record created:', dummyStudent);
+        
+        // Simulate updating the users table with the role
+        console.log('Simulating user update with role: student');
 
         return { success: true, user: authData.user };
-      }
     } catch (error) {
       console.error('Student registration error:', {
         message: error.message,
@@ -436,52 +282,100 @@ export function AuthProvider({ children }) {
 
   const fetchAcademies = async () => {
     try {
-      console.log('Fetching academies...');
+      console.log('Fetching dummy academies...');
       
-      // Fetch all academies regardless of status
-      const { data, error } = await supabase
-        .from('academies')
-        .select('id, name, description, owner_id, status');
+      // Simulate a delay for network request
+      await new Promise(resolve => setTimeout(resolve, 600));
       
-      if (error) {
-        console.error('Error fetching academies:', error.message);
-        throw error;
-      }
+      // Create dummy academies data
+      const dummyAcademies = [
+        {
+          id: 1,
+          name: 'Bright Future Academy',
+          description: 'A premier institution for excellence in education',
+          owner_id: '69123f68-b879-4b20-8a35-20746ed61a36',
+          status: 'active'
+        },
+        {
+          id: 2,
+          name: 'Innovation Learning Center',
+          description: 'Where innovation meets education',
+          owner_id: 'dummy-owner-id-2',
+          status: 'active'
+        },
+        {
+          id: 3,
+          name: 'Global Knowledge Academy',
+          description: 'Preparing students for a global future',
+          owner_id: 'dummy-owner-id-3',
+          status: 'active'
+        }
+      ];
       
-      console.log('Academies fetched:', data);
+      console.log('Dummy academies data:', dummyAcademies);
       
-      if (!data || data.length === 0) {
-        console.log('No academies found');
-      }
-      
-      return { success: true, academies: data || [] };
+      return { success: true, academies: dummyAcademies };
     } catch (error) {
-      console.error('Exception fetching academies:', error.message);
+      console.error('Exception fetching dummy academies:', error.message);
       return { success: false, error: error.message || 'Failed to fetch academies' };
+    }
+  };
+
+  const signIn = async (email, password) => {
+    try {
+      console.log('Dummy sign in with:', email);
+      
+      // Create a dummy user
+      const dummyUser = {
+        id: '69123f68-b879-4b20-8a35-20746ed61a36',
+        email: email,
+        user_metadata: { role: 'academy_owner' }
+      };
+      
+      // Set the user after a short delay to simulate network
+      setTimeout(() => {
+        setUser(dummyUser);
+        
+        // Set dummy user details
+        const dummyUserDetails = {
+          id: 1,
+          user_id: dummyUser.id,
+          name: 'Junaid Ikram',
+          email: dummyUser.email,
+          academy_id: 1,
+          status: 'active',
+          created_at: '2023-01-01T00:00:00.000Z',
+          role: 'academy_owner'
+        };
+        
+        setUserDetails(dummyUserDetails);
+        setUserRole('academy_owner');
+        setIsPending(false);
+        setLoading(false);
+        console.log('Dummy user authenticated:', dummyUser.email);
+      }, 500);
+      
+      return { data: { user: dummyUser }, error: null };
+    } catch (error) {
+      console.error('Error in dummy sign in:', error.message);
+      return { data: null, error };
     }
   };
 
   const signOut = async () => {
     console.log('Attempting to sign out...');
     try {
-      // First clear local state to prevent any race conditions
+      // Clear local state
       setUser(null);
       setUserDetails(null);
       setUserRole(null);
       setIsPending(false);
+      setLoading(false);
       console.log('Local user states cleared.');
       
-      // Then call Supabase signOut
-      console.log('Calling supabase.auth.signOut()...');
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Supabase sign out error:', error.message);
-        throw error;
-      }
-      
-      console.log('Supabase sign out completed.');
-      // Force a page reload to ensure all state is cleared
-      window.location.href = '/';
+      console.log('Dummy sign out completed.');
+      // Redirect to login page
+      window.location.href = '/login';
       console.log('Sign out process finished.');
     } catch (error) {
       console.error('Error signing out:', error.message);

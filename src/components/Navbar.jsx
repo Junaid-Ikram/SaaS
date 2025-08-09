@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUserCircle, FaSignOutAlt, FaBars, FaTimes, FaGraduationCap, FaChalkboardTeacher, FaSchool } from 'react-icons/fa';
+import { FaUser, FaSignOutAlt, FaBars, FaTimes, FaGraduationCap, FaChalkboardTeacher, FaHome, FaInfoCircle, FaTag, FaEnvelope, FaChevronDown, FaBell, FaSearch, FaArrowRight } from 'react-icons/fa';
+import { HiOutlineAcademicCap } from 'react-icons/hi';
 
 const Navbar = () => {
   const { user, userRole, userDetails, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [profileDropdown, setProfileDropdown] = useState(false);
   const location = useLocation();
 
   // Handle scroll effect
@@ -66,182 +68,191 @@ const Navbar = () => {
     <motion.nav 
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-      className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-primary-800 shadow-lg' : 'bg-primary-700 bg-opacity-90'}`}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-xl shadow-md border-b border-emerald-100' : 'bg-white/80 backdrop-blur-md'}`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
             <motion.div 
               className="flex-shrink-0"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
             >
-              <Link to="/" className="flex items-center">
-                <FaSchool className="h-6 w-6 text-secondary-400 mr-2" />
-                <span className="text-white font-bold text-xl bg-gradient-to-r from-primary-400 to-secondary-500 bg-clip-text text-transparent">Academy Platform</span>
+              <Link to="/" className="flex items-center space-x-1 group">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl blur-sm opacity-75"></div>
+                  <div className="relative bg-gradient-to-br from-primary-500 to-primary-700 p-2.5 rounded-xl">
+                    <HiOutlineAcademicCap className="h-7 w-7 text-white" />
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-bold text-gray-900 tracking-tight group-hover:text-primary-700 transition-colors">
+                    EduPlatform
+                  </span>
+                  <span className="text-xs text-primary-600 font-medium -mt-1">
+                    Learning Excellence
+                  </span>
+                </div>
               </Link>
             </motion.div>
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-4">
+            <div className="hidden lg:block">
+              <div className="ml-10 flex items-center space-x-2">
                 {!user ? (
                   // Public navigation links - only shown to non-authenticated users
                   <>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/"
-                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                      >
-                        Home
-                      </Link>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/features"
-                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                      >
-                        Features
-                      </Link>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/pricing"
-                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                      >
-                        Pricing
-                      </Link>
-                    </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/contact"
-                        className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                      >
-                        Contact
-                      </Link>
-                    </motion.div>
+                    <Link
+                      to="/"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      to="/features"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                    >
+                      Features
+                    </Link>
+                    <Link
+                      to="/pricing"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                    >
+                      Pricing
+                    </Link>
+                    <Link
+                      to="/contact"
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                    >
+                      Contact
+                    </Link>
                   </>
                 ) : (
                   // Dashboard link - only shown to authenticated users
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      to={getDashboardLink()}
-                      className="text-gray-100 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 hover:bg-primary-600 hover:bg-opacity-50 flex items-center"
-                    >
-                      Dashboard
-                    </Link>
-                  </motion.div>
+                  <Link
+                    to={getDashboardLink()}
+                    className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                  >
+                    Dashboard
+                  </Link>
                 )}
               </div>
             </div>
           </div>
-          <div className="hidden md:block">
-            <div className="ml-4 flex items-center md:ml-6">
+          <div className="hidden lg:block">
+            <div className="ml-8 flex items-center space-x-5">
               {user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="text-sm text-gray-300">
-                    <span className="hidden lg:inline-block">Hello, </span>
-                    <span className="font-medium">{getUserDisplayName()}</span>
-                    {userRole && (
-                      <span className="ml-2 px-2 py-1 text-xs rounded-full bg-primary-600 text-white shadow-sm">
-                        {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    )}
-                  </div>
-                  {userRole === 'academy_owner' && (
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                      <Link
-                        to="/academy/subscription"
-                        className="text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-primary-600 hover:border-primary-500 hover:bg-primary-600 hover:bg-opacity-20 flex items-center"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>Subscription</span>
-                      </Link>
-                    </motion.div>
-                  )}
+                <div className="flex items-center space-x-5">
+                  {/* Notifications */}
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={signOut}
-                    className="text-white px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-primary-600 hover:border-primary-500 hover:bg-primary-600 hover:bg-opacity-20 flex items-center"
+                    className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors duration-200"
                   >
-                    <span>Sign out</span>
-                    <FaSignOutAlt className="ml-2 h-4 w-4" />
+                    <FaBell className="h-5 w-5" />
+                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-2 border-white"></span>
                   </motion.button>
+                  
+                  {/* Profile Dropdown */}
+                  <div className="relative">
+                    <motion.button 
+                      onClick={() => setProfileDropdown(!profileDropdown)}
+                      className="flex items-center space-x-2 bg-white hover:bg-gray-50 px-3 py-2 rounded-full transition-all duration-200 border border-gray-200 hover:border-primary-300 shadow-sm"
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
+                        <FaUser className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div className="hidden xl:block text-left">
+                        <div className="text-sm font-medium text-gray-800">{getUserDisplayName()}</div>
+                        {userRole && (
+                          <div className="text-xs text-primary-600 font-medium">
+                            {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </div>
+                        )}
+                      </div>
+                      <FaChevronDown className="h-3 w-3 text-gray-400" />
+                    </motion.button>
+                  
+                    {/* Profile Dropdown */}
+                    <AnimatePresence>
+                      {profileDropdown && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100 ring-1 ring-black ring-opacity-5"
+                        >
+                          <div className="px-4 py-3 border-b border-gray-100">
+                            <p className="text-sm font-medium text-gray-800">{getUserDisplayName()}</p>
+                            <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email}</p>
+                          </div>
+                          
+                          <div className="py-1">
+                            <Link to={getDashboardLink()} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                              <FaChalkboardTeacher className="mr-3 h-4 w-4 text-gray-400" />
+                              Dashboard
+                            </Link>
+                            
+                            {userRole === 'academy_owner' && (
+                              <Link to="/academy/subscription" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                <FaGraduationCap className="mr-3 h-4 w-4 text-gray-400" />
+                                Subscription
+                              </Link>
+                            )}
+                          </div>
+                          
+                          <div className="py-1 border-t border-gray-100">
+                            <button
+                              onClick={signOut}
+                              className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                              <FaSignOutAlt className="mr-3 h-4 w-4 text-red-500" />
+                              Sign out
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               ) : (
-                <div className="flex space-x-4 items-center">
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }} 
-                    whileTap={{ scale: 0.95 }}
-                    className="relative"
-                  >
+                <div className="flex items-center space-x-4">
+                  <motion.div whileTap={{ scale: 0.97 }}>
                     <Link
                       to="/login"
-                      className="text-white px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 border border-primary-500 hover:border-primary-400 hover:bg-primary-500 hover:bg-opacity-20 flex items-center"
+                      className="px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700 border border-transparent hover:border-primary-200 rounded-md transition-all duration-200"
                     >
-                      <FaUserCircle className="mr-2 h-4 w-4" />
-                      <span>Sign in</span>
+                      Sign In
                     </Link>
                   </motion.div>
-                  <motion.div 
-                    whileHover={{ scale: 1.05 }} 
-                    whileTap={{ scale: 0.95 }}
-                    className="relative overflow-hidden rounded-md"
-                  >
-                    <span className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-500 animate-pulse opacity-70 blur-sm"></span>
+                  <motion.div whileTap={{ scale: 0.97 }}>
                     <Link
                       to="/register"
-                      className="relative bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white px-5 py-2 rounded-md text-sm font-medium shadow-md transition-all duration-200 flex items-center"
+                      className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md shadow-sm hover:shadow transition-all duration-200 flex items-center space-x-2"
                     >
-                      <span className="mr-1">Sign up</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
+                      <span>Get Started</span>
+                      <FaArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </motion.div>
                 </div>
               )}
             </div>
           </div>
-          <div className="-mr-2 flex md:hidden">
+          <div className="flex lg:hidden">
             <motion.button
+              whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleMenu}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none"
+              className="p-2 rounded-md text-gray-600 hover:text-primary-600 hover:bg-gray-100 transition-all duration-200"
             >
               <span className="sr-only">Open main menu</span>
-              <svg
-                className={`${isMenuOpen ? 'hidden' : 'block'} h-6 w-6`}
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-              <svg
-                className={`${isMenuOpen ? 'block' : 'hidden'} h-6 w-6`}
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              {isMenuOpen ? (
+                <FaTimes className="h-5 w-5" />
+              ) : (
+                <FaBars className="h-5 w-5" />
+              )}
             </motion.button>
           </div>
         </div>
@@ -251,116 +262,110 @@ const Navbar = () => {
         {isMenuOpen && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="md:hidden bg-primary-700 shadow-lg"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-md overflow-hidden"
           >
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="px-4 py-4 space-y-1 max-h-[80vh] overflow-y-auto">
               {!user ? (
-                // Public navigation links - only shown to non-authenticated users
+                // Public navigation links for mobile
                 <>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/"
-                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                    >
-                      <span className="mr-2">🏠</span> Home
-                    </Link>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/features"
-                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                    >
-                      <span className="mr-2">✨</span> Features
-                    </Link>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/pricing"
-                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                    >
-                      <span className="mr-2">💰</span> Pricing
-                    </Link>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/contact"
-                      className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                    >
-                      <span className="mr-2">📞</span> Contact
-                    </Link>
-                  </motion.div>
+                  <Link
+                    to="/"
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <FaHome className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">Home</span>
+                  </Link>
+                  <Link
+                    to="/features"
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <FaInfoCircle className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">Features</span>
+                  </Link>
+                  <Link
+                    to="/pricing"
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <FaTag className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">Pricing</span>
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <FaEnvelope className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">Contact</span>
+                  </Link>
                 </>
               ) : (
-                // Dashboard link - only shown to authenticated users
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Link
-                    to={getDashboardLink()}
-                    className="text-gray-100 hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                  >
-                    <span className="mr-2">📊</span> Dashboard
-                  </Link>
-                </motion.div>
+                // Dashboard link for mobile
+                <Link
+                  to={getDashboardLink()}
+                  className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                >
+                  <FaChalkboardTeacher className="h-5 w-5 text-gray-400" />
+                  <span className="font-medium">Dashboard</span>
+                </Link>
               )}
             </div>
-            <div className="pt-4 pb-3 border-t border-primary-600">
+            <div className="pt-3 mt-3 border-t border-gray-100">
               {user ? (
-                <div className="px-2 space-y-1">
-                  <div className="px-3 py-2 text-base font-medium text-white">
-                    <span>Signed in as </span>
-                    <span className="font-semibold">{getUserDisplayName()}</span>
-                    {userRole && (
-                      <span className="ml-2 px-2 py-1 text-xs rounded-full bg-primary-600 text-white shadow-sm">
-                        {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    )}
+                <div className="px-4 space-y-3">
+                  <div className="py-3 bg-gray-50 rounded-md px-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-full flex items-center justify-center">
+                        <FaUser className="h-4 w-4 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-800">{getUserDisplayName()}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{user.email}</div>
+                        {userRole && (
+                          <div className="mt-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
+                              {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {userRole === 'academy_owner' && (
-                    <motion.div whileTap={{ scale: 0.98 }}>
+                  <div className="space-y-1">
+                    {userRole === 'academy_owner' && (
                       <Link
                         to="/academy/subscription"
-                        className="w-full text-left text-white hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        Manage Subscription
+                        <FaGraduationCap className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium">Manage Subscription</span>
                       </Link>
-                    </motion.div>
-                  )}
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={signOut}
-                    className="w-full text-left text-white hover:bg-primary-600 hover:text-white block px-3 py-2 rounded-md text-base font-medium flex items-center"
-                  >
-                    <FaSignOutAlt className="mr-2 h-4 w-4" />
-                    Sign out
-                  </motion.button>
+                    )}
+                    <button
+                      onClick={signOut}
+                      className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 w-full text-left"
+                    >
+                      <FaSignOutAlt className="h-5 w-5 text-red-500" />
+                      <span className="font-medium">Sign Out</span>
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="px-2 space-y-3">
-                  <motion.div whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/login"
-                      className="text-white hover:bg-primary-500 hover:bg-opacity-20 block px-3 py-2 rounded-md text-base font-medium border border-primary-500 flex items-center"
-                    >
-                      <FaUserCircle className="mr-2 h-5 w-5" />
-                      Sign in
-                    </Link>
-                  </motion.div>
-                  <motion.div whileTap={{ scale: 0.98 }}>
-                    <Link
-                      to="/register"
-                      className="bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white block px-3 py-2 rounded-md text-base font-medium shadow-md flex items-center justify-center"
-                    >
-                      <span className="mr-1">Sign up now</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </Link>
-                  </motion.div>
+                <div className="px-4 py-3 space-y-3 border-t border-gray-100 mt-3">
+                  <Link
+                    to="/login"
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-primary-600 hover:text-primary-700 bg-white border border-primary-200 hover:border-primary-300 transition-all duration-200 font-medium"
+                  >
+                    <span>Sign In</span>
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="flex items-center justify-center space-x-2 px-4 py-2.5 rounded-md text-white bg-primary-600 hover:bg-primary-700 transition-all duration-200 font-medium shadow-sm hover:shadow"
+                  >
+                    <span>Get Started</span>
+                    <FaArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
               )}
             </div>

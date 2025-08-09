@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../utils/supabase';
 
+// This component uses dummy data instead of real database operations
 const AcademySubscription = () => {
   const { user, userDetails } = useAuth();
   const navigate = useNavigate();
@@ -12,63 +12,102 @@ const AcademySubscription = () => {
   const [academyData, setAcademyData] = useState(null);
   
   useEffect(() => {
-    const fetchAcademyData = async () => {
-      if (!user || !userDetails || userDetails.role !== 'academy') {
+    const loadDummyAcademyData = () => {
+      if (!user || !userDetails || userDetails.role !== 'academy_owner') {
         return;
       }
       
       try {
         setLoading(true);
         
-        // Get the academy data for this owner
-        const { data, error } = await supabase
-          .from('academies')
-          .select('*')
-          .eq('owner_id', user.id)
-          .single();
+        // Simulate a loading delay
+        setTimeout(() => {
+          // Create dummy academy data
+          const dummyData = {
+            id: 'acad_123456',
+            name: 'Bright Future Academy',
+            owner_id: user?.id || 'user_123',
+            created_at: '2023-01-15T10:30:00Z',
+            subscription_plan: 'basic',
+            status: 'active',
+            logo_url: null,
+            description: 'A premier educational institution focused on excellence',
+            contact_email: 'admin@brightfuture.edu',
+            contact_phone: '+1 (555) 123-4567',
+            address: '123 Education Ave, Learning City, LC 12345'
+          };
           
-        if (error) throw error;
-        
-        setAcademyData(data);
-        setCurrentPlan(data.subscription_plan || 'basic');
-        setLoading(false);
+          setAcademyData(dummyData);
+          setCurrentPlan(dummyData.subscription_plan || 'basic');
+          setLoading(false);
+        }, 800); // Simulate network delay
       } catch (error) {
-        console.error('Error fetching academy data:', error.message);
+        console.error('Error loading dummy academy data:', error.message);
         setLoading(false);
       }
     };
     
-    fetchAcademyData();
+    loadDummyAcademyData();
   }, [user, userDetails]);
   
   const handleUpgrade = async (plan) => {
-    // In a real application, this would redirect to a payment processor
-    // For this demo, we'll just update the subscription plan directly
+    if (loading) return;
+    if (currentPlan === plan) return;
+    
     try {
       setLoading(true);
+      console.log('Upgrading to plan:', plan);
       
       if (!academyData) {
         throw new Error('Academy data not found');
       }
       
-      // Update the subscription plan in the database
-      const { error } = await supabase
-        .from('academies')
-        .update({ subscription_plan: plan })
-        .eq('id', academyData.id);
-        
-      if (error) throw error;
+      // Get plan details
+      const planDetails = {
+        basic: { price: 29, teachers: 5, students: 50 },
+        pro: { price: 79, teachers: 15, students: 150 },
+        enterprise: { price: 199, teachers: 'Unlimited', students: 'Unlimited' }
+      };
       
+      // Simulate payment confirmation
+      const confirmed = window.confirm(
+        `You are about to subscribe to the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan for $${planDetails[plan].price}/month. \n\n` +
+        `Teachers: ${planDetails[plan].teachers}\n` +
+        `Students: ${planDetails[plan].students}\n\n` +
+        `Click OK to confirm your subscription.`
+      );
+      
+      if (!confirmed) {
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Payment confirmed, processing...');
+      
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the subscription plan in local state only (no database update)
+      console.log('Updating subscription plan for academy:', academyData.id);
+      
+      // Update local state
+      setAcademyData(prev => ({
+        ...prev,
+        subscription_plan: plan
+      }));
+      
+      console.log('Subscription plan updated successfully to:', plan);
       setCurrentPlan(plan);
       setLoading(false);
       
-      // Show success message or redirect
-      alert(`Successfully upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`);
+      // Show success message and redirect
+      alert(`Payment successful! You have subscribed to the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan. You will now be redirected to your dashboard.`);
+      console.log('Redirecting to dashboard...');
       navigate('/academy/dashboard');
     } catch (error) {
       console.error('Error upgrading plan:', error.message);
       setLoading(false);
-      alert('Failed to upgrade plan. Please try again.');
+      alert('Payment failed. Please try again or contact support.');
     }
   };
   

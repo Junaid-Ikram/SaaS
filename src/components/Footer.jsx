@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { FaFacebookF, FaTwitter, FaGithub, FaLinkedinIn, FaPaperPlane } from 'react-icons/fa';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -77,81 +78,132 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto py-12 px-4 overflow-hidden sm:px-6 lg:px-8">
-        <nav className="-mx-5 -my-2 flex flex-wrap justify-center" aria-label="Footer">
-          <div className="px-5 py-2">
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Navigation</h3>
-            <ul className="space-y-2">
+    <footer className="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200">
+      <div className="max-w-7xl mx-auto pt-12 pb-8 px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Logo and description */}
+          <div className="col-span-1 md:col-span-2 lg:col-span-1">
+            <Link to="/" className="flex items-center space-x-2 group mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg blur-sm opacity-75"></div>
+                <div className="relative bg-gradient-to-br from-primary-500 to-primary-700 p-2 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                  </svg>
+                </div>
+              </div>
+              <div>
+                <span className="text-xl font-bold text-gray-900 tracking-tight group-hover:text-primary-700 transition-colors">
+                  EduPlatform
+                </span>
+              </div>
+            </Link>
+            <p className="text-gray-600 mb-6 pr-4">
+              Empowering educational institutions with modern tools for effective teaching and learning experiences.
+            </p>
+            <div className="flex space-x-4">
+              <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.95 }} 
+                className="bg-white p-2 rounded-full text-gray-600 hover:text-primary-600 hover:shadow-md transition-all duration-200 border border-gray-200"
+              >
+                <FaFacebookF className="h-4 w-4" />
+              </motion.a>
+              <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.95 }} 
+                className="bg-white p-2 rounded-full text-gray-600 hover:text-primary-600 hover:shadow-md transition-all duration-200 border border-gray-200"
+              >
+                <FaTwitter className="h-4 w-4" />
+              </motion.a>
+              <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.95 }} 
+                className="bg-white p-2 rounded-full text-gray-600 hover:text-primary-600 hover:shadow-md transition-all duration-200 border border-gray-200"
+              >
+                <FaLinkedinIn className="h-4 w-4" />
+              </motion.a>
+              <motion.a 
+                href="#" 
+                whileHover={{ scale: 1.1 }} 
+                whileTap={{ scale: 0.95 }} 
+                className="bg-white p-2 rounded-full text-gray-600 hover:text-primary-600 hover:shadow-md transition-all duration-200 border border-gray-200"
+              >
+                <FaGithub className="h-4 w-4" />
+              </motion.a>
+            </div>
+          </div>
+          
+          {/* Navigation Links */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Navigation</h3>
+            <ul className="space-y-3">
               {navigation.main.map((item) => (
                 <li key={item.name}>
-                  <Link to={item.href} className="text-base text-gray-300 hover:text-white">
+                  <Link to={item.href} className="text-gray-600 hover:text-primary-600 transition-colors duration-200">
                     {item.name}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="px-5 py-2">
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">For Academies</h3>
-            <ul className="space-y-2">
+          
+          {/* For Academies */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">For Academies</h3>
+            <ul className="space-y-3">
               {navigation.academy.map((item) => (
                 <li key={item.name}>
-                  <Link to={item.href} className="text-base text-gray-300 hover:text-white">
+                  <Link to={item.href} className="text-gray-600 hover:text-primary-600 transition-colors duration-200">
                     {item.name}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="px-5 py-2">
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Legal</h3>
-            <ul className="space-y-2">
-              {navigation.legal.map((item) => (
-                <li key={item.name}>
-                  <Link to={item.href} className="text-base text-gray-300 hover:text-white">
-                    {item.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="px-5 py-2">
-            <h3 className="text-sm font-semibold text-gray-400 tracking-wider uppercase mb-4">Subscribe</h3>
-            <p className="text-base text-gray-300 mb-4">Get the latest news and updates.</p>
+          
+          {/* Subscribe */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 tracking-wider uppercase mb-4">Stay Updated</h3>
+            <p className="text-gray-600 mb-4">Subscribe to our newsletter for the latest updates.</p>
             <form className="flex">
               <input
                 type="email"
-                placeholder="Enter your email"
-                className="min-w-0 flex-1 bg-gray-800 border-0 py-2 px-4 text-white focus:ring-2 focus:ring-green-500 rounded-l-md"
+                placeholder="Your email"
+                className="min-w-0 flex-1 bg-white border border-gray-300 py-2 px-3 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 rounded-l-md text-sm"
               />
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-green-600 hover:bg-green-700 py-2 px-4 rounded-r-md text-white font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-primary-600 hover:bg-primary-700 py-2 px-4 rounded-r-md text-white font-medium text-sm flex items-center transition-colors duration-200"
               >
-                Subscribe
+                <FaPaperPlane className="h-3.5 w-3.5 mr-1" />
+                <span>Send</span>
               </motion.button>
             </form>
           </div>
-        </nav>
-        <div className="mt-8 flex justify-center space-x-6">
-          {navigation.social.map((item) => (
-            <motion.a
-              key={item.name}
-              href={item.href}
-              className="text-gray-400 hover:text-gray-300"
-              whileHover={{ scale: 1.2, color: '#fff' }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <span className="sr-only">{item.name}</span>
-              <item.icon className="h-6 w-6" aria-hidden="true" />
-            </motion.a>
-          ))}
         </div>
-        <p className="mt-8 text-center text-base text-gray-400">
-          &copy; {currentYear} Academy Platform. All rights reserved.
-        </p>
+        
+        {/* Legal Links */}
+        <div className="mt-12 pt-6 border-t border-gray-200">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex space-x-6 mb-4 md:mb-0">
+              {navigation.legal.map((item) => (
+                <Link key={item.name} to={item.href} className="text-sm text-gray-600 hover:text-primary-600 transition-colors duration-200">
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+            <p className="text-sm text-gray-600">
+              &copy; {currentYear} EduPlatform. All rights reserved.
+            </p>
+          </div>
+        </div>
       </div>
     </footer>
   );

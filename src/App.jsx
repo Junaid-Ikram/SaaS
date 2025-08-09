@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'r
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import SubscriptionEnforcement from './components/SubscriptionEnforcement';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import { setupDatabase } from './utils/setupDatabase';
@@ -112,7 +113,9 @@ const AppContent = () => {
             
             <Route path="/academy/dashboard" element={
               <RoleBasedRoute requiredRole="academy_owner">
-                <AcademyDashboard />
+                <SubscriptionEnforcement>
+                  <AcademyDashboard />
+                </SubscriptionEnforcement>
               </RoleBasedRoute>
             } />
             
