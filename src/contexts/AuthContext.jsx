@@ -24,36 +24,25 @@ export function AuthProvider({ children }) {
     // Simulate a short delay to mimic authentication process
     const simulateAuth = async () => {
       try {
-        // Create a dummy user
-        const dummyUser = {
-          id: '69123f68-b879-4b20-8a35-20746ed61a36',
-          email: 'junaidikram17@gmail.com',
-          user_metadata: { role: 'academy_owner' }
-        };
+        // Check for stored user in localStorage to persist login across refreshes
+        const storedUser = localStorage.getItem('dummyUser');
+        const storedUserDetails = localStorage.getItem('dummyUserDetails');
+        const storedUserRole = localStorage.getItem('dummyUserRole');
         
-        // Set the user after a short delay
-        setTimeout(() => {
-          console.log('Dummy user authenticated:', dummyUser.email);
-          setUser(dummyUser);
-          
-          // Set dummy user details
-          const dummyUserDetails = {
-            id: 1,
-            user_id: dummyUser.id,
-            name: 'Junaid Ikram',
-            email: dummyUser.email,
-            academy_id: 1,
-            status: 'active',
-            created_at: '2023-01-01T00:00:00.000Z',
-            role: 'academy_owner'
-          };
-          
-          setUserDetails(dummyUserDetails);
-          setUserRole('academy_owner');
+        if (storedUser && storedUserDetails && storedUserRole) {
+          // Restore user session from localStorage
+          console.log('Restoring user session from localStorage');
+          setUser(JSON.parse(storedUser));
+          setUserDetails(JSON.parse(storedUserDetails));
+          setUserRole(storedUserRole);
           setIsPending(false);
           setLoading(false);
-          console.log('Dummy user details set, loading complete');
-        }, 3000); // 3000ms (3 seconds) delay to simulate network and show loading state
+          console.log('User session restored, loading complete');
+        } else {
+          // No stored user, set loading to false
+          console.log('No stored user session found');
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Error in dummy auth:', error);
         setLoading(false);
@@ -325,19 +314,40 @@ export function AuthProvider({ children }) {
     try {
       console.log('Dummy sign in with:', email);
       
-      // Create a dummy user
-      const dummyUser = {
-        id: '69123f68-b879-4b20-8a35-20746ed61a36',
-        email: email,
-        user_metadata: { role: 'academy_owner' }
-      };
+      // Check for specific user credentials
+      let dummyUser;
+      let dummyUserDetails;
+      let role;
       
-      // Set the user after a short delay to simulate network
-      setTimeout(() => {
-        setUser(dummyUser);
+      // SuperAdmin credentials
+      if (email === 'admin@example.com' && password === 'Admin@123') {
+        dummyUser = {
+          id: 'superadmin-123-456-789',
+          email: email,
+          user_metadata: { role: 'super_admin' }
+        };
         
-        // Set dummy user details
-        const dummyUserDetails = {
+        dummyUserDetails = {
+          id: 0,
+          user_id: dummyUser.id,
+          name: 'System Administrator',
+          email: dummyUser.email,
+          status: 'active',
+          created_at: '2023-01-01T00:00:00.000Z',
+          role: 'super_admin'
+        };
+        
+        role = 'super_admin';
+      }
+      // Academy owner credentials
+      else if (email === 'junaidikram17@gmail.com' && password === 'Junaid@17') {
+        dummyUser = {
+          id: '69123f68-b879-4b20-8a35-20746ed61a36',
+          email: email,
+          user_metadata: { role: 'academy_owner' }
+        };
+        
+        dummyUserDetails = {
           id: 1,
           user_id: dummyUser.id,
           name: 'Junaid Ikram',
@@ -348,11 +358,72 @@ export function AuthProvider({ children }) {
           role: 'academy_owner'
         };
         
+        role = 'academy_owner';
+      }
+      // Teacher credentials
+      else if (email === 'teacher@example.com' && password === 'Teacher@123') {
+        dummyUser = {
+          id: 'teacher-123-456-789',
+          email: email,
+          user_metadata: { role: 'teacher' }
+        };
+        
+        dummyUserDetails = {
+          id: 2,
+          user_id: dummyUser.id,
+          name: 'John Smith',
+          email: dummyUser.email,
+          academy_id: 1,
+          status: 'active',
+          created_at: '2023-01-15T00:00:00.000Z',
+          role: 'teacher',
+          subjects: ['Mathematics', 'Physics']
+        };
+        
+        role = 'teacher';
+      }
+      // Student credentials
+      else if (email === 'student@example.com' && password === 'Student@123') {
+        dummyUser = {
+          id: 'student-123-456-789',
+          email: email,
+          user_metadata: { role: 'student' }
+        };
+        
+        dummyUserDetails = {
+          id: 3,
+          user_id: dummyUser.id,
+          name: 'Sarah Johnson',
+          email: dummyUser.email,
+          academy_id: 1,
+          status: 'active',
+          created_at: '2023-02-01T00:00:00.000Z',
+          role: 'student',
+          grade_level: '10th Grade'
+        };
+        
+        role = 'student';
+      }
+      // Invalid credentials
+      else {
+        console.error('Invalid credentials');
+        return { data: null, error: { message: 'Invalid email or password' } };
+      }
+      
+      // Set the user after a short delay to simulate network
+      setTimeout(() => {
+        setUser(dummyUser);
         setUserDetails(dummyUserDetails);
-        setUserRole('academy_owner');
+        setUserRole(role);
         setIsPending(false);
         setLoading(false);
-        console.log('Dummy user authenticated:', dummyUser.email);
+        
+        // Store user data in localStorage to persist login
+        localStorage.setItem('dummyUser', JSON.stringify(dummyUser));
+        localStorage.setItem('dummyUserDetails', JSON.stringify(dummyUserDetails));
+        localStorage.setItem('dummyUserRole', role);
+        
+        console.log('Dummy user authenticated:', dummyUser.email, 'with role:', role);
       }, 500);
       
       return { data: { user: dummyUser }, error: null };
@@ -372,6 +443,12 @@ export function AuthProvider({ children }) {
       setIsPending(false);
       setLoading(false);
       console.log('Local user states cleared.');
+      
+      // Clear localStorage
+      localStorage.removeItem('dummyUser');
+      localStorage.removeItem('dummyUserDetails');
+      localStorage.removeItem('dummyUserRole');
+      console.log('LocalStorage cleared.');
       
       console.log('Dummy sign out completed.');
       // Redirect to login page
@@ -394,6 +471,7 @@ export function AuthProvider({ children }) {
     registerStudent,
     fetchAcademies,
     fetchUserDetails, // Expose this if needed elsewhere
+    signIn, // Add signIn function to the context value
     signOut,
     dbInitialized,
     setDatabaseInitialized,

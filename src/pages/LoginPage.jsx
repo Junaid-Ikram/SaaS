@@ -179,6 +179,20 @@ const LoginPage = () => {
               </Link>
             </p>
           </motion.div>
+          
+          {/* Dummy credentials information */}
+          <motion.div 
+            variants={itemVariants} 
+            className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md"
+          >
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h3>
+            <div className="space-y-2 text-xs text-blue-700">
+              <p><strong>Super Admin:</strong> admin@example.com / Admin@123</p>
+              <p><strong>Academy Owner:</strong> junaidikram17@gmail.com / Junaid@17</p>
+              <p><strong>Teacher:</strong> teacher@example.com / Teacher@123</p>
+              <p><strong>Student:</strong> student@example.com / Student@123</p>
+            </div>
+          </motion.div>
         </motion.form>
       </motion.div>
     </div>
