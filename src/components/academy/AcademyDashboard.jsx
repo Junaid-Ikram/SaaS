@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 // Import custom hooks
 import useWindowSize from './useWindowSize';
-import useDummyData from './useDummyData';
+import useAcademyData from './useAcademyData';
 
 // Import components
 import Sidebar from './Sidebar';
@@ -28,14 +28,12 @@ const AcademyDashboard = () => {
   const [resourceFilter, setResourceFilter] = useState('all');
 
   // Get window size using custom hook
-  const { isMobile } = useWindowSize();
-
-  // Get data using custom hook
   const {
     loading,
+    error,
+    refresh,
     academyData,
     zoomCredits,
-    zoomCreditsHistory,
     classes,
     resources,
     notifications,
@@ -50,7 +48,7 @@ const AcademyDashboard = () => {
     setPendingUsers,
     setTeachers,
     setStudents
-  } = useDummyData();
+  } = useAcademyData();
 
   // Derived data
   const teacherCount = teachers.length;
@@ -158,6 +156,21 @@ const AcademyDashboard = () => {
       >
         {/* Dashboard header */}
         <DashboardHeader academyData={academyData} />
+        {error && (
+          <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span>{error}</span>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-red-700 underline underline-offset-2 hover:text-red-800"
+                onClick={refresh}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+        
         
         {/* Tab content */}
         <TabContent 
@@ -256,3 +269,4 @@ const AcademyDashboard = () => {
 };
 
 export default AcademyDashboard;
+
