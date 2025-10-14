@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-// Using dummy auth instead of Supabase
+﻿import React, { useState } from 'react';
 // import { supabase } from '../utils/supabase';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -12,7 +11,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const { signIn } = useAuth(); // Use our dummy auth context
+  const { signIn } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,22 +19,18 @@ const LoginPage = () => {
     setError(null);
     
     try {
-      console.log('Attempting to sign in with email:', email);
-      // Use our dummy signIn function from AuthContext
-      const { data, error } = await signIn(email, password);
-      
-      if (error) throw error;
-      
-      console.log('Login successful, user authenticated');
-      // Simulate a delay before redirecting
-      setTimeout(() => {
-        // Redirect to the appropriate dashboard based on role
-        navigate('/academy/dashboard');
-      }, 3000); // 3 seconds delay to match other components
-    } catch (error) {
-      console.error('Login error:', error.message);
-      setError(error.message);
-      setLoading(false); // Only set loading to false on error
+      const { error: signInError } = await signIn(email, password);
+
+      if (signInError) {
+        throw signInError;
+      }
+
+      navigate('/dashboard', { replace: true });
+      setLoading(false);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err?.message ?? 'Unable to sign in. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -180,19 +175,6 @@ const LoginPage = () => {
             </p>
           </motion.div>
           
-          {/* Dummy credentials information */}
-          <motion.div 
-            variants={itemVariants} 
-            className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-md"
-          >
-            <h3 className="text-sm font-semibold text-blue-800 mb-2">Demo Credentials:</h3>
-            <div className="space-y-2 text-xs text-blue-700">
-              <p><strong>Super Admin:</strong> admin@example.com / Admin@123</p>
-              <p><strong>Academy Owner:</strong> junaidikram17@gmail.com / Junaid@17</p>
-              <p><strong>Teacher:</strong> teacher@example.com / Teacher@123</p>
-              <p><strong>Student:</strong> student@example.com / Student@123</p>
-            </div>
-          </motion.div>
         </motion.form>
       </motion.div>
     </div>
@@ -200,3 +182,6 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
+
+

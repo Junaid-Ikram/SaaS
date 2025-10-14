@@ -1,32 +1,47 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import apiRequest from '../../utils/apiClient';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api';
-
-const buildAuthHeaders = () => {
-  const storedToken = localStorage.getItem('accessToken');
-  return storedToken ? { Authorization: `Bearer ${storedToken}` } : {};
+const DEFAULT_SUBSCRIPTION_LIMITS = {
+  studentLimit: 200,
+  teacherLimit: 25,
+  storageLimit: 100,
 };
 
-const apiRequest = async (path, init = {}) => {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...buildAuthHeaders(),
-      ...(init.headers ?? {}),
-    },
-  });
+const safeLocaleDate = (value) => {
+  if (!value) return '—';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+};
 
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || `Request failed with status ${response.status}`);
-  }
+const normaliseRole = (role) => (role ? role.toLowerCase() : null);
 
-  const payload = await response.json();
-  return payload?.data ?? payload;
+const mapClassRecord = (record) => {
+  const status = (record.status ?? 'UPCOMING').toLowerCase();
+  const teacherName = record.teacher
+    ? `${record.teacher.firstName} ${record.teacher.lastName ?? ''}`.trim() || record.teacher.email
+    : 'Unassigned';
+
+  return {
+    id: record.id,
+    title: record.title,
+    description: record.description ?? '',
+    teacher: teacherName,
+    teacherId: record.teacher?.id ?? null,
+    schedule: formatTimeRange(record.scheduledStart, record.scheduledEnd, record.timezone),
+    date: record.scheduledStart,
+    endDate: record.scheduledEnd,
+    duration: record.durationMinutes,
+    students_count: record.participantsCount ?? 0,
+    attendance: status === 'ended' ? record.participantsCount ?? 0 : null,
+    status,
+    timezone: record.timezone,
+    zoomLink: record.zoomJoinUrl,
+  };
 };
 
 const formatTimeRange = (startIso, endIso, timezone) => {
+  if (!startIso || !endIso) return '';
   try {
     const start = new Date(startIso);
     const end = new Date(endIso);
@@ -38,37 +53,13 @@ const formatTimeRange = (startIso, endIso, timezone) => {
     });
 
     const date = dateFormatter.format(start);
-    return `${date}, ${timeFormatter.format(start)} � ${timeFormatter.format(end)}`;
+    return `${date}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
   } catch (error) {
     return '';
   }
 };
 
-const mapClassRecord = (record) => {
-  const status = (record.status ?? 'UPCOMING').toLowerCase();
-  const teacherName = record.teacher ? `${record.teacher.firstName} ${record.teacher.lastName ?? ''}`.trim() : 'Unassigned';
-
-  return {
-    id: record.id,
-    title: record.title,
-    description: record.description ?? '',
-    teacher: teacherName,
-    schedule: formatTimeRange(record.scheduledStart, record.scheduledEnd, record.timezone),
-    date: record.scheduledStart,
-    duration: record.durationMinutes,
-    students_count: record.participantsCount ?? 0,
-    attendance: status === 'ended' ? record.participantsCount ?? 0 : null,
-    status,
-    zoomLink: record.zoomJoinUrl,
-  };
-};
-
-const mapTransactionType = (type) => {
-  if (type === 'CREDIT' || type === 'TRANSFER_IN') {
-    return 'purchase';
-  }
-  return 'usage';
-};
+const mapTransactionType = (type) => (type === 'CREDIT' || type === 'TRANSFER_IN' ? 'purchase' : 'usage');
 
 const mapTransactionRecord = (record) => ({
   id: record.id,
@@ -80,50 +71,42 @@ const mapTransactionRecord = (record) => ({
   className: record.metadata?.classTitle ?? record.reason ?? 'N/A',
 });
 
-const deriveUserId = () => {
-  try {
-    const stored = localStorage.getItem('dummyUser');
-    if (!stored) {
-      return null;
-    }
-    const parsed = JSON.parse(stored);
-    return parsed?.id ?? null;
-  } catch (_error) {
-    return null;
-  }
-};
-
-const emptySubscriptionUsage = {
-  studentLimit: 0,
-  studentCount: 0,
-  teacherLimit: 0,
-  teacherCount: 0,
-  storageLimit: 0,
-  storageUsed: 0,
-  zoomCreditsLimit: 0,
-  zoomCreditsUsed: 0,
-  recentActivity: [],
-};
-
-const defaultAcademyData = {
-  id: '',
-  name: 'Your Academy',
-  createdAt: new Date().toISOString(),
-  subscription: {
-    plan: 'Professional',
-    startDate: new Date().toISOString(),
-    endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    status: 'active',
-  },
+const buildDisplayName = (user) => {
+  const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  return name || user.email;
 };
 
 const useAcademyData = () => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [academyData, setAcademyData] = useState(defaultAcademyData);
+  const [academyData, setAcademyData] = useState({
+    id: '',
+    name: 'Your Academy',
+    createdAt: new Date().toISOString(),
+    subscription: {
+      plan: 'Professional',
+      startDate: new Date().toISOString(),
+      endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'active',
+    },
+  });
   const [classes, setClasses] = useState([]);
-  const [zoomCredits, setZoomCredits] = useState({ available: 0, used: 0, history: [] });
-  const [subscriptionUsage, setSubscriptionUsage] = useState(emptySubscriptionUsage);
+  const [zoomCredits, setZoomCredits] = useState({
+    available: 0,
+    used: 0,
+    totalCredited: 0,
+    history: [],
+  });
+  const [subscriptionUsage, setSubscriptionUsage] = useState({
+    ...DEFAULT_SUBSCRIPTION_LIMITS,
+    studentCount: 0,
+    teacherCount: 0,
+    storageUsed: 0,
+    zoomCreditsLimit: 0,
+    zoomCreditsUsed: 0,
+    recentActivity: [],
+  });
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -132,56 +115,256 @@ const useAcademyData = () => {
   const [resources, setResources] = useState([]);
   const [payments, setPayments] = useState([]);
 
-  const userId = useMemo(() => deriveUserId(), []);
+  const userId = user?.id ?? null;
+  const academyName = useMemo(() => {
+    if (!user) return 'Your Academy';
+    const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+    return name ? `${name}'s Academy` : 'Your Academy';
+  }, [user]);
+
+  const mapTeacherRecord = useCallback(
+    (teacher, classesByTeacher) => ({
+      id: teacher.id,
+      name: buildDisplayName(teacher),
+      email: teacher.email,
+      role: normaliseRole(teacher.role),
+      status: teacher.status,
+      joinDate: safeLocaleDate(teacher.createdAt),
+      classes: classesByTeacher[teacher.id] ?? 0,
+      phoneNumber: teacher.phoneNumber ?? '',
+    }),
+    [],
+  );
+
+  const mapStudentRecord = useCallback(
+    (student) => ({
+      id: student.id,
+      name: buildDisplayName(student),
+      email: student.email,
+      role: normaliseRole(student.role),
+      status: student.status,
+      joinDate: safeLocaleDate(student.createdAt),
+      enrolledClasses: student.metadata?.enrolledClasses ?? 0,
+      phoneNumber: student.phoneNumber ?? '',
+    }),
+    [],
+  );
+
+  const mapPendingRecord = useCallback((pending) => ({
+    id: pending.id,
+    name: buildDisplayName(pending),
+    email: pending.email,
+    role: normaliseRole(pending.role),
+    status: pending.status,
+    requestDate: safeLocaleDate(pending.createdAt),
+  }), []);
+
+  const buildRecentActivity = useCallback((mappedClasses, mappedPending) => {
+    const classActivity = mappedClasses.slice(0, 3).map((cls) => ({
+      type: 'class',
+      description: `Scheduled "${cls.title}"`,
+      date: safeLocaleDate(cls.date),
+    }));
+
+    const pendingActivity = mappedPending.slice(0, 2).map((userRecord) => ({
+      type: 'user',
+      description: `New ${userRecord.role === 'teacher' ? 'teacher' : 'student'} application from ${userRecord.name}`,
+      date: userRecord.requestDate,
+    }));
+
+    return [...classActivity, ...pendingActivity];
+  }, []);
 
   const loadData = useCallback(async () => {
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const [classesResponse, creditsSummary, transactionsResponse] = await Promise.all([
-        apiRequest('/classes?limit=100'),
-        userId ? apiRequest(`/zoom-credits/${userId}/summary`) : Promise.resolve(null),
-        userId ? apiRequest(`/zoom-credits/${userId}/transactions?limit=50`) : Promise.resolve({ data: [] }),
+      const [
+        classesResponse,
+        teachersApprovedResponse,
+        studentsApprovedResponse,
+        teachersPendingResponse,
+        zoomSummary,
+        transactionsResponse,
+      ] = await Promise.all([
+        apiRequest('/classes?limit=100&page=1'),
+        apiRequest('/users/teachers?limit=100&page=1&status=APPROVED'),
+        apiRequest('/users/students?limit=100&page=1&status=APPROVED'),
+        apiRequest('/users/teachers?limit=100&page=1&status=PENDING'),
+        apiRequest('/users/students?limit=100&page=1&status=PENDING'),
+        apiRequest(`/zoom-credits/${userId}/summary`).catch(() => null),
+        apiRequest(`/zoom-credits/${userId}/transactions?limit=50&page=1`).catch(() => null),
       ]);
 
-      const mappedClasses = Array.isArray(classesResponse?.data)
-        ? classesResponse.data.map(mapClassRecord)
-        : [];
-
+      const rawClasses = Array.isArray(classesResponse?.data) ? classesResponse.data : [];
+      const mappedClasses = rawClasses.map(mapClassRecord);
       setClasses(mappedClasses);
 
-      if (creditsSummary) {
+      const classesByTeacher = mappedClasses.reduce((acc, item) => {
+        if (item.teacherId) {
+          acc[item.teacherId] = (acc[item.teacherId] ?? 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      const rawTeachers = Array.isArray(teachersApprovedResponse?.data) ? teachersApprovedResponse.data : [];
+      const mappedTeachers = rawTeachers.map((teacher) => mapTeacherRecord(teacher, classesByTeacher));
+      setTeachers(mappedTeachers);
+
+      const rawStudents = Array.isArray(studentsApprovedResponse?.data) ? studentsApprovedResponse.data : [];
+      const mappedStudents = rawStudents.map(mapStudentRecord);
+      setStudents(mappedStudents);
+
+      const pendingTeacherRecords = Array.isArray(teachersPendingResponse?.data) ? teachersPendingResponse.data : [];
+      const pendingStudentRecords = Array.isArray(studentsPendingResponse?.data) ? studentsPendingResponse.data : [];
+      const rawPending = [...pendingTeacherRecords, ...pendingStudentRecords];
+      const mappedPending = rawPending.map(mapPendingRecord);
+      setPendingUsers(mappedPending);
+
+      if (zoomSummary) {
         const transactions = Array.isArray(transactionsResponse?.data) ? transactionsResponse.data : [];
         const mappedHistory = transactions.map(mapTransactionRecord);
         setZoomCredits({
-          available: creditsSummary.balance ?? 0,
-          used: creditsSummary.totalDebited ?? 0,
+          available: zoomSummary.balance ?? 0,
+          used: zoomSummary.totalDebited ?? 0,
+          totalCredited: zoomSummary.totalCredited ?? (zoomSummary.balance ?? 0) + (zoomSummary.totalDebited ?? 0),
           history: mappedHistory,
         });
+      } else {
+        setZoomCredits((prev) => ({ ...prev, history: [] }));
       }
 
-      setSubscriptionUsage((prev) => ({
-        ...prev,
-        teacherCount: teachers.length,
-        studentCount: students.length,
-        zoomCreditsUsed: creditsSummary?.totalDebited ?? prev.zoomCreditsUsed,
-      }));
+      setSubscriptionUsage({
+        studentLimit: DEFAULT_SUBSCRIPTION_LIMITS.studentLimit,
+        teacherLimit: DEFAULT_SUBSCRIPTION_LIMITS.teacherLimit,
+        storageLimit: DEFAULT_SUBSCRIPTION_LIMITS.storageLimit,
+        studentCount: mappedStudents.length,
+        teacherCount: mappedTeachers.length,
+        storageUsed: Math.min(DEFAULT_SUBSCRIPTION_LIMITS.storageLimit, mappedStudents.length * 0.5),
+        zoomCreditsLimit: zoomSummary?.totalCredited ?? 0,
+        zoomCreditsUsed: zoomSummary?.totalDebited ?? 0,
+        recentActivity: buildRecentActivity(mappedClasses, mappedPending),
+      });
 
       setAcademyData((prev) => ({
         ...prev,
+        name: academyName,
         updatedAt: new Date().toISOString(),
       }));
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load academy data');
+      const message = fetchError instanceof Error ? fetchError.message : 'Failed to load academy data';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  }, [students.length, teachers.length, userId]);
+  }, [academyName, buildRecentActivity, mapPendingRecord, mapStudentRecord, mapTeacherRecord, userId]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const approvePendingUser = useCallback(
+    async (userIdToApprove) => {
+      const pendingUser = pendingUsers.find((candidate) => candidate.id === userIdToApprove);
+      if (!pendingUser) {
+        return { success: false, error: 'Pending user not found.' };
+      }
+
+      try {
+        const updatedUser = await apiRequest(`/users/${userIdToApprove}/status`, {
+          method: 'PATCH',
+          body: { status: 'APPROVED' },
+        });
+
+        setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToApprove));
+
+        if (normaliseRole(updatedUser.role) === 'teacher') {
+          setTeachers((prev) => [
+            ...prev,
+            mapTeacherRecord(updatedUser, classes.reduce((acc, cls) => {
+              if (cls.teacherId) {
+                acc[cls.teacherId] = (acc[cls.teacherId] ?? 0) + 1;
+              }
+              return acc;
+            }, {})),
+          ]);
+        } else {
+          setStudents((prev) => [...prev, mapStudentRecord(updatedUser)]);
+          setSubscriptionUsage((prev) => ({
+            ...prev,
+            studentCount: prev.studentCount + 1,
+          }));
+        }
+
+        return { success: true, user: updatedUser };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to approve user.';
+        return { success: false, error: message };
+      }
+    },
+    [classes, mapStudentRecord, mapTeacherRecord, pendingUsers],
+  );
+
+  const rejectPendingUser = useCallback(
+    async (userIdToReject, reason) => {
+      const pendingUser = pendingUsers.find((candidate) => candidate.id === userIdToReject);
+      if (!pendingUser) {
+        return { success: false, error: 'Pending user not found.' };
+      }
+
+      const trimmedReason = reason?.trim();
+      if (!trimmedReason) {
+        return { success: false, error: 'Rejection reason is required.' };
+      }
+
+      try {
+        await apiRequest(`/users/${userIdToReject}/status`, {
+          method: 'PATCH',
+          body: { status: 'REJECTED', rejectionReason: trimmedReason },
+        });
+
+        setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToReject));
+        return { success: true };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to reject user.';
+        return { success: false, error: message };
+      }
+    },
+    [pendingUsers],
+  );
+
+  const purchaseCredits = useCallback(
+    async (amount) => {
+      if (!userId) {
+        return { success: false, error: 'Unable to determine current user.' };
+      }
+
+      try {
+        await apiRequest('/zoom-credits/transactions', {
+          method: 'POST',
+          body: {
+            userId,
+            operation: 'credit',
+            amount,
+            reason: 'Manual credit purchase from dashboard',
+          },
+        });
+
+        await loadData();
+        return { success: true };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to purchase credits.';
+        return { success: false, error: message };
+      }
+    },
+    [loadData, userId],
+  );
 
   return {
     loading,
@@ -198,14 +381,29 @@ const useAcademyData = () => {
     students,
     resources,
     payments,
+    approvePendingUser,
+    rejectPendingUser,
+    purchaseCredits,
     setNotifications,
     setUnreadNotifications,
-    setPendingUsers,
-    setTeachers,
-    setStudents,
-    setResources,
-    setPayments,
   };
 };
 
 export default useAcademyData;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

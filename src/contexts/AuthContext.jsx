@@ -1,8 +1,42 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-// Using dummy data instead of Supabase
-// import { supabase } from '../utils/supabase';
+﻿import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import apiRequest, {
+  clearSession,
+  getStoredSession,
+  logoutFromServer,
+  refreshAuthSession,
+  saveSession,
+} from '../utils/apiClient';
 
 const AuthContext = createContext();
+
+const normalizeRole = (role) => {
+  if (!role) return null;
+  return role.toLowerCase();
+};
+
+const buildUserDetails = (user) => {
+  if (!user) return null;
+  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+  return {
+    ...user,
+    name: fullName || user.email,
+    full_name: fullName || user.email,
+  };
+};
+
+const mapRegistrationPayload = ({ email, password, fullName, contactNumber, role }) => {
+  const [firstName, ...rest] = (fullName ?? '').trim().split(/\s+/);
+  const lastName = rest.length > 0 ? rest.join(' ') : undefined;
+
+  return {
+    email,
+    password,
+    firstName: firstName ?? email,
+    lastName,
+    phoneNumber: contactNumber,
+    role,
+  };
+};
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -12,473 +46,199 @@ export function AuthProvider({ children }) {
   const [isPending, setIsPending] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
 
-  // Function to set dbInitialized status
-  const setDatabaseInitialized = (status) => {
-    setDbInitialized(status);
-  };
-
-  useEffect(() => {
-    // Using dummy data instead of Supabase authentication
-    console.log('Setting up dummy authentication');
-    
-    // Simulate a short delay to mimic authentication process
-    const simulateAuth = async () => {
-      try {
-        // Check for stored user in localStorage to persist login across refreshes
-        const storedUser = localStorage.getItem('dummyUser');
-        const storedUserDetails = localStorage.getItem('dummyUserDetails');
-        const storedUserRole = localStorage.getItem('dummyUserRole');
-        
-        if (storedUser && storedUserDetails && storedUserRole) {
-          // Restore user session from localStorage
-          console.log('Restoring user session from localStorage');
-          setUser(JSON.parse(storedUser));
-          setUserDetails(JSON.parse(storedUserDetails));
-          setUserRole(storedUserRole);
-          setIsPending(false);
-          setLoading(false);
-          console.log('User session restored, loading complete');
-        } else {
-          // No stored user, set loading to false
-          console.log('No stored user session found');
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Error in dummy auth:', error);
-        setLoading(false);
-      }
-    };
-    
-    simulateAuth();
-    
-    // No cleanup needed for dummy auth
-    return () => {};
+  const setDatabaseInitialized = useCallback((status) => {
+    setDbInitialized(Boolean(status));
   }, []);
 
-  // Dummy function to replace real database queries
-  const fetchUserDetails = async (userId) => {
-    try {
-      console.log('Fetching dummy user details for userId:', userId);
-      
-      // This function is now just a placeholder since we're using dummy data
-      // The actual user details are set directly in the useEffect
-      console.log('Using dummy data instead of real database queries');
-      
-      // No need to do anything here as we set the user details in the useEffect
-      return;
-    } catch (error) {
-      console.error('Exception in dummy fetchUserDetails:', error.message);
-      // In a real app, we would handle errors properly
-      // For now, we'll just log them
-    }
-  };
-
-  const registerAcademyOwner = async (email, password, fullName, academyName, contactNumber = null, academyAddress = null) => {
-    try {
-      console.log('Registering dummy academy owner:', email);
-      
-      // Simulate checking if email is already registered
-      const existingUsers = [];
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (existingUsers && existingUsers.length > 0) {
-        throw new Error('Email already registered');
-      }
-      
-      // Create dummy user data
-      console.log('Creating dummy user with email:', email);
-      
-      // Simulate a delay for registration
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Create dummy auth data
-      const authData = {
-        user: {
-          id: 'dummy-user-id-' + Date.now(),
-          email,
-          user_metadata: { 
-            full_name: fullName, 
-            academy_name: academyName, 
-            role: 'academy_owner' 
-          }
-        }
-      };
-      
-      console.log('Dummy user created:', authData.user);
-      
-      // Create dummy academy owner record
-      const dummyOwner = { 
-        user_id: authData.user.id, 
-        full_name: fullName, 
-        email, 
-        phone: contactNumber, 
-        status: 'active' 
-      };
-      
-      console.log('Dummy academy owner created:', dummyOwner);
-      
-      // Create dummy academy record
-      const academyData = [{ 
-        id: 'dummy-academy-id-' + Date.now(),
-        name: academyName, 
-        owner_id: authData.user.id,
-        address: academyAddress,
-        status: 'active'
-      }];
-      
-      console.log('Dummy academy created:', academyData);
-
-      // Simulate updating the users table with the role
-      console.log('Simulating user update with role: academy_owner');
-      
-      console.log('Academy created successfully:', academyData);
-      return { success: true, user: authData.user, academy: academyData?.[0] };
-    } catch (error) {
-      console.error('Registration error:', {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-      });
-      return { success: false, error };
-    }
-  };
-
-  const registerTeacher = async (email, password, fullName, academyId, specialization = null, experience = null, contactNumber = null) => {
-    try {
-      console.log('Registering dummy teacher with email:', email);
-      console.log('Academy ID:', academyId);
-      
-      // Simulate checking if email is already registered
-      const existingUsers = [];
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (existingUsers && existingUsers.length > 0) {
-        throw new Error('Email already registered');
-      }
-      
-      // Create dummy user data
-      console.log('Creating dummy teacher with email:', email);
-      
-      // Simulate a delay for registration
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Create dummy auth data
-      const authData = {
-        user: {
-          id: 'dummy-teacher-id-' + Date.now(),
-          email,
-          user_metadata: { 
-            full_name: fullName, 
-            role: 'teacher' 
-          }
-        }
-      };
-      
-      console.log('Dummy teacher user created:', authData.user);
-      
-      // Create dummy teacher record
-      const dummyTeacher = { 
-        user_id: authData.user.id, 
-        full_name: fullName, 
-        email, 
-        phone: contactNumber,
-        academy_id: academyId,
-        subjects: specialization ? [specialization] : [],
-        status: 'pending' // Set status to pending for academy owner approval
-      };
-      
-      console.log('Dummy teacher record created:', dummyTeacher);
-      
-      // Simulate updating the users table with the role
-      console.log('Simulating user update with role: teacher');
-
-      return { success: true, user: authData.user };
-    } catch (error) {
-      console.error('Teacher registration error:', {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-      });
-      return { success: false, error };
-    }
-  };
-
-  const registerStudent = async (email, password, fullName, academyId, gradeLevel = null, age = null, guardianContact = null) => {
-    try {
-      console.log('Registering dummy student with email:', email);
-      console.log('Academy ID:', academyId);
-      
-      // Simulate checking if email is already registered
-      const existingUsers = [];
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      if (existingUsers && existingUsers.length > 0) {
-        throw new Error('Email already registered');
-      }
-      
-      // Create dummy user data
-      console.log('Creating dummy student with email:', email);
-      
-      // Simulate a delay for registration
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Create dummy auth data
-      const authData = {
-        user: {
-          id: 'dummy-student-id-' + Date.now(),
-          email,
-          user_metadata: { 
-            full_name: fullName, 
-            role: 'student' 
-          }
-        }
-      };
-      
-      console.log('Dummy student user created:', authData.user);
-      
-      // Create dummy student record
-      const dummyStudent = { 
-        user_id: authData.user.id, 
-        full_name: fullName, 
-            email, 
-            phone: guardianContact,
-            academy_id: academyId,
-            grade_level: gradeLevel,
-            status: 'pending' // Set status to pending for academy owner approval
-          };
-          
-        console.log('Dummy student record created:', dummyStudent);
-        
-        // Simulate updating the users table with the role
-        console.log('Simulating user update with role: student');
-
-        return { success: true, user: authData.user };
-    } catch (error) {
-      console.error('Student registration error:', {
-        message: error.message,
-        details: error.details,
-        code: error.code,
-      });
-      return { success: false, error };
-    }
-  };
-
-  const fetchAcademies = async () => {
-    try {
-      console.log('Fetching dummy academies...');
-      
-      // Simulate a delay for network request
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
-      // Create dummy academies data
-      const dummyAcademies = [
-        {
-          id: 1,
-          name: 'Bright Future Academy',
-          description: 'A premier institution for excellence in education',
-          owner_id: '69123f68-b879-4b20-8a35-20746ed61a36',
-          status: 'active'
-        },
-        {
-          id: 2,
-          name: 'Innovation Learning Center',
-          description: 'Where innovation meets education',
-          owner_id: 'dummy-owner-id-2',
-          status: 'active'
-        },
-        {
-          id: 3,
-          name: 'Global Knowledge Academy',
-          description: 'Preparing students for a global future',
-          owner_id: 'dummy-owner-id-3',
-          status: 'active'
-        }
-      ];
-      
-      console.log('Dummy academies data:', dummyAcademies);
-      
-      return { success: true, academies: dummyAcademies };
-    } catch (error) {
-      console.error('Exception fetching dummy academies:', error.message);
-      return { success: false, error: error.message || 'Failed to fetch academies' };
-    }
-  };
-
-  const signIn = async (email, password) => {
-    try {
-      console.log('Dummy sign in with:', email);
-      
-      // Check for specific user credentials
-      let dummyUser;
-      let dummyUserDetails;
-      let role;
-      
-      // SuperAdmin credentials
-      if (email === 'admin@example.com' && password === 'Admin@123') {
-        dummyUser = {
-          id: 'superadmin-123-456-789',
-          email: email,
-          user_metadata: { role: 'super_admin' }
-        };
-        
-        dummyUserDetails = {
-          id: 0,
-          user_id: dummyUser.id,
-          name: 'System Administrator',
-          email: dummyUser.email,
-          status: 'active',
-          created_at: '2023-01-01T00:00:00.000Z',
-          role: 'super_admin'
-        };
-        
-        role = 'super_admin';
-      }
-      // Academy owner credentials
-      else if (email === 'junaidikram17@gmail.com' && password === 'Junaid@17') {
-        dummyUser = {
-          id: '69123f68-b879-4b20-8a35-20746ed61a36',
-          email: email,
-          user_metadata: { role: 'academy_owner' }
-        };
-        
-        dummyUserDetails = {
-          id: 1,
-          user_id: dummyUser.id,
-          name: 'Junaid Ikram',
-          email: dummyUser.email,
-          academy_id: 1,
-          status: 'active',
-          created_at: '2023-01-01T00:00:00.000Z',
-          role: 'academy_owner'
-        };
-        
-        role = 'academy_owner';
-      }
-      // Teacher credentials
-      else if (email === 'teacher@example.com' && password === 'Teacher@123') {
-        dummyUser = {
-          id: 'teacher-123-456-789',
-          email: email,
-          user_metadata: { role: 'teacher' }
-        };
-        
-        dummyUserDetails = {
-          id: 2,
-          user_id: dummyUser.id,
-          name: 'John Smith',
-          email: dummyUser.email,
-          academy_id: 1,
-          status: 'active',
-          created_at: '2023-01-15T00:00:00.000Z',
-          role: 'teacher',
-          subjects: ['Mathematics', 'Physics']
-        };
-        
-        role = 'teacher';
-      }
-      // Student credentials
-      else if (email === 'student@example.com' && password === 'Student@123') {
-        dummyUser = {
-          id: 'student-123-456-789',
-          email: email,
-          user_metadata: { role: 'student' }
-        };
-        
-        dummyUserDetails = {
-          id: 3,
-          user_id: dummyUser.id,
-          name: 'Sarah Johnson',
-          email: dummyUser.email,
-          academy_id: 1,
-          status: 'active',
-          created_at: '2023-02-01T00:00:00.000Z',
-          role: 'student',
-          grade_level: '10th Grade'
-        };
-        
-        role = 'student';
-      }
-      // Invalid credentials
-      else {
-        console.error('Invalid credentials');
-        return { data: null, error: { message: 'Invalid email or password' } };
-      }
-      
-      // Set the user after a short delay to simulate network
-      setTimeout(() => {
-        setUser(dummyUser);
-        setUserDetails(dummyUserDetails);
-        setUserRole(role);
-        setIsPending(false);
-        setLoading(false);
-        
-        // Store user data in localStorage to persist login
-        localStorage.setItem('dummyUser', JSON.stringify(dummyUser));
-        localStorage.setItem('dummyUserDetails', JSON.stringify(dummyUserDetails));
-        localStorage.setItem('dummyUserRole', role);
-        
-        console.log('Dummy user authenticated:', dummyUser.email, 'with role:', role);
-      }, 500);
-      
-      return { data: { user: dummyUser }, error: null };
-    } catch (error) {
-      console.error('Error in dummy sign in:', error.message);
-      return { data: null, error };
-    }
-  };
-
-  const signOut = async () => {
-    console.log('Attempting to sign out...');
-    try {
-      // Clear local state
+  const applySession = useCallback((session) => {
+    if (!session?.user) {
       setUser(null);
       setUserDetails(null);
       setUserRole(null);
       setIsPending(false);
-      setLoading(false);
-      console.log('Local user states cleared.');
-      
-      // Clear localStorage
-      localStorage.removeItem('dummyUser');
-      localStorage.removeItem('dummyUserDetails');
-      localStorage.removeItem('dummyUserRole');
-      console.log('LocalStorage cleared.');
-      
-      console.log('Dummy sign out completed.');
-      // Redirect to login page
-      window.location.href = '/login';
-      console.log('Sign out process finished.');
-    } catch (error) {
-      console.error('Error signing out:', error.message);
-      // Even if there's an error, try to redirect to home
-      window.location.href = '/';
+      return;
     }
-  };
+
+    const nextUser = session.user;
+    setUser(nextUser);
+    setUserDetails(buildUserDetails(nextUser));
+    setUserRole(normalizeRole(nextUser.role));
+    setIsPending(nextUser.status !== 'APPROVED');
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const initialise = async () => {
+      try {
+        const stored = getStoredSession();
+        if (stored.user && active) {
+          applySession({ user: stored.user });
+        }
+
+        if (stored.refreshToken) {
+          try {
+            const refreshed = await refreshAuthSession(stored.refreshToken);
+            if (active && refreshed) {
+              applySession(refreshed);
+            }
+          } catch (error) {
+            console.error('Failed to restore session from refresh token', error);
+            clearSession();
+            if (active) {
+              applySession(null);
+            }
+          }
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initialise();
+
+    return () => {
+      active = false;
+    };
+  }, [applySession]);
+
+  const signIn = useCallback(
+    async (email, password) => {
+      setLoading(true);
+      try {
+        const data = await apiRequest('/auth/login', {
+          method: 'POST',
+          body: { email, password },
+          omitAuth: true,
+          retry: false,
+        });
+
+        if (data?.accessToken && data?.refreshToken && data?.user) {
+          saveSession(data);
+          applySession(data);
+          setLoading(false);
+          return { data, error: null };
+        }
+
+        throw new Error('Unexpected login response format');
+      } catch (error) {
+        console.error('login failed', error);
+        setLoading(false);
+        return { data: null, error };
+      }
+    },
+    [applySession],
+  );
+
+  const registerViaAuth = useCallback(async (payload) => {
+    try {
+      await apiRequest('/auth/register', {
+        method: 'POST',
+        body: payload,
+        omitAuth: true,
+        retry: false,
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('registration failed', error);
+      return { success: false, error };
+    }
+  }, []);
+
+  const registerAcademyOwner = useCallback(
+    async (email, password, fullName, _academyName, contactNumber, _academyAddress) => {
+      const payload = mapRegistrationPayload({
+        email,
+        password,
+        fullName,
+        contactNumber,
+        role: 'ACADEMY_OWNER',
+      });
+      return registerViaAuth(payload);
+    },
+    [registerViaAuth],
+  );
+
+  const registerTeacher = useCallback(
+    async (email, password, fullName, _academyId, _specialization, _experience, contactNumber) => {
+      const payload = mapRegistrationPayload({
+        email,
+        password,
+        fullName,
+        contactNumber,
+        role: 'TEACHER',
+      });
+      return registerViaAuth(payload);
+    },
+    [registerViaAuth],
+  );
+
+  const registerStudent = useCallback(
+    async (email, password, fullName, _academyId, contactNumber, _gradeLevel, _age, _guardianContact) => {
+      const payload = mapRegistrationPayload({
+        email,
+        password,
+        fullName,
+        contactNumber,
+        role: 'STUDENT',
+      });
+      return registerViaAuth(payload);
+    },
+    [registerViaAuth],
+  );
+
+  const fetchUserDetails = useCallback(async () => {
+    if (!user?.id) return null;
+
+    try {
+      const latest = await apiRequest(`/users/${user.id}`);
+      const session = { user: latest };
+      saveSession({ ...getStoredSession(), user: latest });
+      applySession(session);
+      return latest;
+    } catch (error) {
+      console.error('Failed to fetch user details', error);
+      return null;
+    }
+  }, [applySession, user?.id]);
+
+  const fetchAcademies = useCallback(async () => {
+    console.warn('fetchAcademies is not yet implemented against the backend');
+    return { success: false, error: 'Academy directory not available yet.' };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    try {
+      const { refreshToken } = getStoredSession();
+      await logoutFromServer(refreshToken ?? undefined);
+    } finally {
+      applySession(null);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+    }
+  }, [applySession]);
 
   const value = {
     user,
     userDetails,
     userRole,
     loading,
+    isPending,
+    dbInitialized,
+    setDatabaseInitialized,
     registerAcademyOwner,
     registerTeacher,
     registerStudent,
     fetchAcademies,
-    fetchUserDetails, // Expose this if needed elsewhere
-    signIn, // Add signIn function to the context value
+    fetchUserDetails,
+    signIn,
     signOut,
-    dbInitialized,
-    setDatabaseInitialized,
-    isPending,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+}
 
 export const useAuth = () => useContext(AuthContext);

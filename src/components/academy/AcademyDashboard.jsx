@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
 // Import custom hooks
@@ -43,70 +43,16 @@ const AcademyDashboard = () => {
     students,
     payments,
     subscriptionUsage,
+    approvePendingUser,
+    rejectPendingUser,
+    purchaseCredits,
     setNotifications,
     setUnreadNotifications,
-    setPendingUsers,
-    setTeachers,
-    setStudents
   } = useAcademyData();
 
   // Derived data
   const teacherCount = teachers.length;
   const studentCount = students.length;
-
-  // Handle user action (approve/reject)
-  const handleUserAction = (userId, action) => {
-    // Find the user
-    const user = pendingUsers.find(u => u.id === userId);
-    if (!user) return;
-
-    // Remove from pending users
-    setPendingUsers(pendingUsers.filter(u => u.id !== userId));
-
-    // If approved, add to appropriate list
-    if (action === 'approve') {
-      if (user.role === 'teacher') {
-        setTeachers([...teachers, {
-          id: user.id,
-          fullName: user.name,
-          email: user.email,
-          status: 'active',
-          createdAt: new Date().toISOString().split('T')[0],
-          subjects: [],
-          lastActive: new Date().toISOString().split('T')[0]
-        }]);
-      } else if (user.role === 'student') {
-        setStudents([...students, {
-          id: user.id,
-          fullName: user.name,
-          email: user.email,
-          status: 'active',
-          createdAt: new Date().toISOString().split('T')[0],
-          grade: 'N/A',
-          assignedTeacher: 'Unassigned',
-          lastActive: new Date().toISOString().split('T')[0]
-        }]);
-      }
-    }
-
-    // Update notifications
-    const notificationIndex = notifications.findIndex(n => 
-      n.type === 'approval' && n.message.includes(user.name)
-    );
-
-    if (notificationIndex !== -1) {
-      const updatedNotifications = [...notifications];
-      updatedNotifications[notificationIndex].read = true;
-      setNotifications(updatedNotifications);
-      setUnreadNotifications(prev => prev - 1);
-    }
-  };
-
-  // Handle class selection
-  const handleClassSelect = (classItem) => {
-    setSelectedClass(classItem);
-    setShowClassModal(true);
-  };
 
   // Determine content variant based on sidebar state and mobile view
   const getContentVariant = () => {
@@ -183,9 +129,9 @@ const AcademyDashboard = () => {
           teachers={teachers}
           students={students}
           pendingUsers={pendingUsers}
-          setPendingUsers={setPendingUsers}
-          setTeachers={setTeachers}
-          setStudents={setStudents}
+          onApproveUser={approvePendingUser}
+          onRejectUser={rejectPendingUser}
+          onPurchaseCredits={purchaseCredits}
           notifications={notifications}
           setNotifications={setNotifications}
           setUnreadNotifications={setUnreadNotifications}
@@ -269,4 +215,10 @@ const AcademyDashboard = () => {
 };
 
 export default AcademyDashboard;
+
+
+
+
+
+
 

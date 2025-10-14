@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AnimatePresence } from 'framer-motion';
 
 // Import tab components
@@ -20,23 +20,22 @@ const TabContent = ({
   teachers,
   students,
   pendingUsers,
-  setPendingUsers,
-  setTeachers,
-  setStudents,
+  onApproveUser,
+  onRejectUser,
+  onPurchaseCredits,
   notifications,
   setNotifications,
   setUnreadNotifications,
   payments,
   resources,
   activeSubTab,
-  setActiveSubTab
+  setActiveSubTab,
 }) => {
-  // Use a function to render the active tab based on the activeTab state
   const renderActiveTab = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case 'overview':
         return (
-          <OverviewTab 
+          <OverviewTab
             key="overview"
             teacherCount={teacherCount}
             studentCount={studentCount}
@@ -47,19 +46,18 @@ const TabContent = ({
         );
       case 'users':
         return (
-          <UsersTab 
+          <UsersTab
             key="users"
             teachers={teachers}
             students={students}
             pendingUsers={pendingUsers}
-            setPendingUsers={setPendingUsers}
-            setTeachers={setTeachers}
-            setStudents={setStudents}
+            onApproveUser={onApproveUser}
+            onRejectUser={onRejectUser}
           />
         );
       case 'notifications':
         return (
-          <NotificationsTab 
+          <NotificationsTab
             key="notifications"
             notifications={notifications}
             setNotifications={setNotifications}
@@ -67,36 +65,26 @@ const TabContent = ({
           />
         );
       case 'payments':
-        return (
-          <PaymentsTab 
-            key="payments"
-            payments={payments} 
-          />
-        );
+        return <PaymentsTab key="payments" payments={payments} />;
       case 'zoom':
         return (
-          <ZoomCreditsTab 
+          <ZoomCreditsTab
             key="zoom"
-            zoomCredits={zoomCredits} 
+            zoomCredits={zoomCredits}
+            onPurchaseCredits={onPurchaseCredits}
           />
         );
       case 'classes':
         return (
-          <ClassesTab 
+          <ClassesTab
             key="classes"
-            classes={classes} 
-            activeSubTab={activeSubTab} 
-            setActiveSubTab={setActiveSubTab} 
+            classes={classes}
+            activeSubTab={activeSubTab}
+            setActiveSubTab={setActiveSubTab}
           />
         );
       case 'resources':
-        return (
-          <ResourcesTab 
-            key="resources"
-            resources={resources} 
-            classes={classes} 
-          />
-        );
+        return <ResourcesTab key="resources" resources={resources} classes={classes} />;
       default:
         return null;
     }
@@ -105,9 +93,7 @@ const TabContent = ({
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       <div className="p-6">
-        <AnimatePresence mode="wait">
-          {renderActiveTab()}
-        </AnimatePresence>
+        <AnimatePresence mode="wait">{renderActiveTab()}</AnimatePresence>
       </div>
     </div>
   );
