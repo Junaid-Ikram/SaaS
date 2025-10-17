@@ -230,6 +230,10 @@ const useAcademyData = () => {
       if (zoomSummary) {
         const transactions = Array.isArray(transactionsResponse?.data) ? transactionsResponse.data : [];
         const mappedHistory = transactions.map(mapTransactionRecord);
+                  setSubscriptionUsage((prev) => ({
+            ...prev,
+            teacherCount: prev.teacherCount + 1,
+          }));
         setZoomCredits({
           available: zoomSummary.balance ?? 0,
           used: zoomSummary.totalDebited ?? 0,
@@ -294,6 +298,10 @@ const useAcademyData = () => {
               return acc;
             }, {})),
           ]);
+          setSubscriptionUsage((prev) => ({
+            ...prev,
+            teacherCount: prev.teacherCount + 1,
+          }));
         } else {
           setStudents((prev) => [...prev, mapStudentRecord(updatedUser)]);
           setSubscriptionUsage((prev) => ({
@@ -310,7 +318,6 @@ const useAcademyData = () => {
     },
     [classes, mapStudentRecord, mapTeacherRecord, pendingUsers],
   );
-
   const rejectPendingUser = useCallback(
     async (userIdToReject, reason) => {
       const pendingUser = pendingUsers.find((candidate) => candidate.id === userIdToReject);
@@ -390,6 +397,12 @@ const useAcademyData = () => {
 };
 
 export default useAcademyData;
+
+
+
+
+
+
 
 
 

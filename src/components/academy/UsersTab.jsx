@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from 'react';
+﻿import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FaSearch,
@@ -16,19 +16,14 @@ const emptyListMessage = {
 
 const toSearchableString = (value) => (value ?? '').toLowerCase();
 
-const UsersTab = ({
-  teachers = [],
-  students = [],
-  pendingUsers = [],
-  onApproveUser,
-  onRejectUser,
-}) => {
+const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUser, onRejectUser }) => {
   const [activeSubTab, setActiveSubTab] = useState('teachers');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionError, setActionError] = useState(null);
+  const [actionSuccess, setActionSuccess] = useState(null);
 
   const normalisedSearch = searchTerm.trim().toLowerCase();
 
@@ -57,10 +52,13 @@ const UsersTab = ({
 
     try {
       setActionError(null);
+      setActionSuccess(null);
       setActionLoadingId(user.id);
       const result = await onApproveUser(user.id);
       if (result?.success === false) {
         setActionError(result.error ?? 'Unable to approve user.');
+      } else {
+        setActionSuccess('User approved successfully.');
       }
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to approve user.');
@@ -81,10 +79,13 @@ const UsersTab = ({
 
     try {
       setActionError(null);
+      setActionSuccess(null);
       setActionLoadingId(user.id);
       const result = await onRejectUser(user.id, reason);
       if (result?.success === false) {
         setActionError(result.error ?? 'Unable to reject user.');
+      } else {
+        setActionSuccess('User rejected successfully.');
       }
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to reject user.');
@@ -92,6 +93,12 @@ const UsersTab = ({
       setActionLoadingId(null);
     }
   };
+
+  useEffect(() => {
+    if (!actionSuccess) return;
+    const timer = setTimeout(() => setActionSuccess(null), 3000);
+    return () => clearTimeout(timer);
+  }, [actionSuccess]);
 
   const renderEmptyState = (type) => (
     <div className="text-center py-8">
@@ -304,9 +311,11 @@ const UsersTab = ({
       </div>
 
       {actionError && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {actionError}
-        </div>
+        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{actionError}</div>
+      )}
+
+      {actionSuccess && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{actionSuccess}</div>
       )}
 
       {activeSubTab === 'teachers' && renderTeachers()}
@@ -316,7 +325,7 @@ const UsersTab = ({
       {showUserModal && selectedUser && (
         <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" />
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
               <div>

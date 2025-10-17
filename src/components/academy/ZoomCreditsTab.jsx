@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaCheck, FaFilter, FaDownload, FaShoppingCart } from 'react-icons/fa';
 
@@ -34,6 +34,7 @@ const ZoomCreditsTab = ({ zoomCredits, onPurchaseCredits }) => {
   const [filterType, setFilterType] = useState('all');
   const [processingPlan, setProcessingPlan] = useState(null);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   const filteredHistory = (zoomCredits?.history ?? []).filter((item) => {
     if (filterType === 'all') return true;
@@ -45,14 +46,26 @@ const ZoomCreditsTab = ({ zoomCredits, onPurchaseCredits }) => {
       return;
     }
 
-    setError(null);
-    setProcessingPlan(plan.id);
-    const result = await onPurchaseCredits(plan.amount);
-    if (result?.success === false) {
-      setError(result.error ?? 'Unable to complete purchase.');
+    try {
+      setError(null);
+      setSuccess(null);
+      setProcessingPlan(plan.id);
+      const result = await onPurchaseCredits(plan.amount);
+      if (result?.success === false) {
+        setError(result.error ?? 'Unable to complete purchase.');
+      } else {
+        setSuccess(`${plan.amount} credits added successfully.`);
+      }
+    } finally {
+      setProcessingPlan(null);
     }
-    setProcessingPlan(null);
   };
+
+  useEffect(() => {
+    if (!success) return;
+    const timer = setTimeout(() => setSuccess(null), 3000);
+    return () => clearTimeout(timer);
+  }, [success]);
 
   const summary = {
     available: zoomCredits?.available ?? 0,
@@ -87,14 +100,15 @@ const ZoomCreditsTab = ({ zoomCredits, onPurchaseCredits }) => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h4 className="text-lg font-medium text-gray-900">Purchase Credits</h4>
-            <p className="text-gray-600">
-              Choose a package to instantly add credits to your balance. Transactions apply to your account owner.
-            </p>
+            <p className="text-gray-600">Choose a package to instantly add credits to your balance.</p>
           </div>
         </div>
 
         {error && (
           <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        )}
+        {success && (
+          <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">{success}</div>
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -102,10 +116,7 @@ const ZoomCreditsTab = ({ zoomCredits, onPurchaseCredits }) => {
             const accent = accentClass[plan.accent];
             const isProcessing = processingPlan === plan.id;
             return (
-              <div
-                key={plan.id}
-                className="border rounded-lg p-6 hover:shadow-md transition-shadow duration-300 border-gray-200"
-              >
+              <div key={plan.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow duration-300 border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                   <h5 className="text-lg font-medium text-gray-900">{plan.name}</h5>
                   <span className={`${accent.badge} text-xs font-semibold px-2.5 py-0.5 rounded`}>{plan.price}</span>
