@@ -2,10 +2,16 @@
 import { useAuth } from '../../contexts/AuthContext';
 import apiRequest from '../../utils/apiClient';
 
-const DEFAULT_SUBSCRIPTION_LIMITS = {
-  studentLimit: 200,
-  teacherLimit: 25,
-  storageLimit: 100,
+const EMPTY_SUBSCRIPTION_USAGE = {
+  studentLimit: 0,
+  teacherLimit: 0,
+  storageLimit: 0,
+  studentCount: 0,
+  teacherCount: 0,
+  storageUsed: 0,
+  zoomCreditsLimit: 0,
+  zoomCreditsUsed: 0,
+  recentActivity: [],
 };
 
 const safeLocaleDate = (value) => {
@@ -98,15 +104,7 @@ const useAcademyData = () => {
     totalCredited: 0,
     history: [],
   });
-  const [subscriptionUsage, setSubscriptionUsage] = useState({
-    ...DEFAULT_SUBSCRIPTION_LIMITS,
-    studentCount: 0,
-    teacherCount: 0,
-    storageUsed: 0,
-    zoomCreditsLimit: 0,
-    zoomCreditsUsed: 0,
-    recentActivity: [],
-  });
+  const [subscriptionUsage, setSubscriptionUsage] = useState(EMPTY_SUBSCRIPTION_USAGE);
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -175,7 +173,7 @@ const useAcademyData = () => {
     return [...classActivity, ...pendingActivity];
   }, []);
 
-  const loadData = useCallback(async () => {
+const loadData = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
@@ -185,11 +183,71 @@ const useAcademyData = () => {
     setError(null);
 
     try {
+      const nowIso = new Date().toISOString();
+      const overview = await apiRequest('/dashboard/overview');
+
+      if (overview) {
+        const overviewTransactions = Array.isArray(overview.zoomCredits?.recentTransactions)
+          ? overview.zoomCredits.recentTransactions.map((tx) => ({
+              id: tx.id,
+              date: tx.timestamp,
+              amount: tx.amount,
+              type: mapTransactionType(tx.type),
+              status: 'Completed',
+              transactionId: tx.id,
+              className: tx.summary,
+            }))
+          : [];
+
+        if (Array.isArray(overview.upcomingClasses) && overview.upcomingClasses.length > 0) {
+          setClasses(overview.upcomingClasses.map(mapClassRecord));
+        }
+
+        setAcademyData({
+          id: overview.academy?.id ?? userId,
+          name: overview.academy?.name ?? academyName,
+          createdAt: overview.academy?.createdAt ?? overview.academy?.updatedAt ?? nowIso,
+          subscription: {
+            plan: overview.subscription?.plan ?? 'Professional',
+            startDate: overview.academy?.createdAt ?? nowIso,
+            endDate: overview.academy?.updatedAt ?? nowIso,
+            status: 'active',
+          },
+        });
+
+        setZoomCredits({
+          available: overview.zoomCredits?.balance ?? 0,
+          used: overview.zoomCredits?.totalDebited ?? 0,
+          totalCredited: overview.zoomCredits?.totalCredited ?? 0,
+          history: overviewTransactions,
+        });
+
+        setSubscriptionUsage({
+          studentLimit: overview.subscription?.limits?.students ?? 0,
+          teacherLimit: overview.subscription?.limits?.teachers ?? 0,
+          storageLimit: overview.subscription?.limits?.storageGb ?? 0,
+          studentCount: overview.subscription?.usage?.students ?? 0,
+          teacherCount: overview.subscription?.usage?.teachers ?? 0,
+          storageUsed: overview.subscription?.usage?.storageGb ?? 0,
+          zoomCreditsLimit: overview.zoomCredits?.totalCredited ?? 0,
+          zoomCreditsUsed: overview.zoomCredits?.totalDebited ?? 0,
+          recentActivity: Array.isArray(overview.recentActivity)
+            ? overview.recentActivity.map((item) => ({
+                id: item.id,
+                type: item.type,
+                message: item.message,
+                timestamp: item.timestamp,
+              }))
+            : [],
+        });
+      }
+
       const [
         classesResponse,
         teachersApprovedResponse,
         studentsApprovedResponse,
         teachersPendingResponse,
+        studentsPendingResponse,
         zoomSummary,
         transactionsResponse,
       ] = await Promise.all([
@@ -228,38 +286,44 @@ const useAcademyData = () => {
       setPendingUsers(mappedPending);
 
       if (zoomSummary) {
-        const transactions = Array.isArray(transactionsResponse?.data) ? transactionsResponse.data : [];
-        const mappedHistory = transactions.map(mapTransactionRecord);
-                  setSubscriptionUsage((prev) => ({
-            ...prev,
-            teacherCount: prev.teacherCount + 1,
-          }));
-        setZoomCredits({
-          available: zoomSummary.balance ?? 0,
-          used: zoomSummary.totalDebited ?? 0,
-          totalCredited: zoomSummary.totalCredited ?? (zoomSummary.balance ?? 0) + (zoomSummary.totalDebited ?? 0),
-          history: mappedHistory,
-        });
-      } else {
-        setZoomCredits((prev) => ({ ...prev, history: [] }));
+        setZoomCredits((prev) => ({
+          ...prev,
+          available: zoomSummary.balance ?? prev.available,
+          used: zoomSummary.totalDebited ?? prev.used,
+          totalCredited: zoomSummary.totalCredited ?? prev.totalCredited,
+        }));
       }
 
-      setSubscriptionUsage({
-        studentLimit: DEFAULT_SUBSCRIPTION_LIMITS.studentLimit,
-        teacherLimit: DEFAULT_SUBSCRIPTION_LIMITS.teacherLimit,
-        storageLimit: DEFAULT_SUBSCRIPTION_LIMITS.storageLimit,
+      if (transactionsResponse?.data) {
+        const mappedHistory = Array.isArray(transactionsResponse.data)
+          ? transactionsResponse.data.map(mapTransactionRecord)
+          : [];
+        setZoomCredits((prev) => ({
+          ...prev,
+          history: mappedHistory,
+        }));
+      }
+
+      setSubscriptionUsage((prev) => ({
+        studentLimit: prev.studentLimit || overview?.subscription?.limits?.students || 0,
+        teacherLimit: prev.teacherLimit || overview?.subscription?.limits?.teachers || 0,
+        storageLimit: prev.storageLimit || overview?.subscription?.limits?.storageGb || 0,
         studentCount: mappedStudents.length,
         teacherCount: mappedTeachers.length,
-        storageUsed: Math.min(DEFAULT_SUBSCRIPTION_LIMITS.storageLimit, mappedStudents.length * 0.5),
-        zoomCreditsLimit: zoomSummary?.totalCredited ?? 0,
-        zoomCreditsUsed: zoomSummary?.totalDebited ?? 0,
-        recentActivity: buildRecentActivity(mappedClasses, mappedPending),
-      });
+        storageUsed:
+          prev.storageLimit > 0
+            ? Math.min(prev.storageLimit, mappedStudents.length * 0.5)
+            : Math.min(overview?.subscription?.limits?.storageGb ?? 0, mappedStudents.length * 0.5),
+        zoomCreditsLimit: overview?.zoomCredits?.totalCredited ?? zoomSummary?.totalCredited ?? prev.zoomCreditsLimit,
+        zoomCreditsUsed: overview?.zoomCredits?.totalDebited ?? zoomSummary?.totalDebited ?? prev.zoomCreditsUsed,
+        recentActivity:
+          prev.recentActivity.length > 0 ? prev.recentActivity : buildRecentActivity(mappedClasses, mappedPending),
+      }));
 
       setAcademyData((prev) => ({
         ...prev,
-        name: academyName,
-        updatedAt: new Date().toISOString(),
+        name: overview?.academy?.name ?? prev.name ?? academyName,
+        updatedAt: nowIso,
       }));
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : 'Failed to load academy data';
