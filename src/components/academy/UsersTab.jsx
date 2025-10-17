@@ -16,7 +16,17 @@ const emptyListMessage = {
 
 const toSearchableString = (value) => (value ?? '').toLowerCase();
 
-const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUser, onRejectUser }) => {
+const SUMMARY_TEMPLATE = { approved: 0, pending: 0, rejected: 0, inactive: 0 };
+
+const UsersTab = ({
+  teachers = [],
+  students = [],
+  pendingUsers = [],
+  teacherSummary = SUMMARY_TEMPLATE,
+  studentSummary = SUMMARY_TEMPLATE,
+  onApproveUser,
+  onRejectUser,
+}) => {
   const [activeSubTab, setActiveSubTab] = useState('teachers');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -24,6 +34,41 @@ const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUs
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [actionError, setActionError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [userPendingAction, setUserPendingAction] = useState(null);
+
+  const teacherStats = teacherSummary ?? SUMMARY_TEMPLATE;
+  const studentStats = studentSummary ?? SUMMARY_TEMPLATE;
+  const totalPending = pendingUsers.length;
+
+  const summaryCards = useMemo(() => {
+    const teacherPending = teacherStats.pending ?? 0;
+    const studentPending = studentStats.pending ?? 0;
+    return [
+      {
+        key: 'teachers',
+        label: 'Approved Teachers',
+        value: teacherStats.approved ?? teachers.length,
+        hint: `${teacherPending} pending • ${teacherStats.inactive ?? 0} inactive`,
+        Icon: FaChalkboardTeacher,
+      },
+      {
+        key: 'students',
+        label: 'Approved Students',
+        value: studentStats.approved ?? students.length,
+        hint: `${studentPending} pending`,
+        Icon: FaUserGraduate,
+      },
+      {
+        key: 'pending',
+        label: 'Pending Approvals',
+        value: totalPending,
+        hint: `${teacherPending + studentPending} awaiting review`,
+        Icon: FaUserTimes,
+      },
+    ];
+  }, [studentStats, teacherStats, students.length, teachers.length, totalPending]);
 
   const normalisedSearch = searchTerm.trim().toLowerCase();
 
@@ -67,25 +112,47 @@ const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUs
     }
   };
 
-  const handleReject = async (user) => {
-    if (!onRejectUser || !user?.id) {
+  const handleReject = (user) => {
+    if (!user?.id) {
       return;
     }
 
-    const reason = window.prompt('Provide a reason for rejecting this request', 'Incomplete profile information');
-    if (reason === null) {
+    setActionError(null);
+    setActionSuccess(null);
+    setRejectReason('');
+    setUserPendingAction(user);
+    setRejectModalOpen(true);
+  };
+
+  const closeRejectModal = () => {
+    setRejectModalOpen(false);
+    setRejectReason('');
+    setUserPendingAction(null);
+    setActionLoadingId(null);
+    setActionError(null);
+  };
+
+  const submitReject = async () => {
+    if (!onRejectUser || !userPendingAction?.id) {
+      return;
+    }
+
+    const trimmedReason = rejectReason.trim();
+    if (!trimmedReason) {
+      setActionError('Rejection reason is required.');
       return;
     }
 
     try {
       setActionError(null);
       setActionSuccess(null);
-      setActionLoadingId(user.id);
-      const result = await onRejectUser(user.id, reason);
+      setActionLoadingId(userPendingAction.id);
+      const result = await onRejectUser(userPendingAction.id, trimmedReason);
       if (result?.success === false) {
         setActionError(result.error ?? 'Unable to reject user.');
       } else {
         setActionSuccess('User rejected successfully.');
+        closeRejectModal();
       }
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to reject user.');
@@ -246,6 +313,23 @@ const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUs
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {summaryCards.map((card) => (
+          <div
+            key={card.key}
+            className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <div>
+              <p className="text-sm text-gray-500">{card.label}</p>
+              <p className="mt-2 text-2xl font-semibold text-gray-900">{card.value}</p>
+              {card.hint && <p className="mt-1 text-xs text-gray-400">{card.hint}</p>}
+            </div>
+            <div className="rounded-full bg-gray-100 p-3 text-gray-600">
+              <card.Icon className="h-5 w-5" />
+            </div>
+          </div>
+        ))}
+      </div>
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -322,6 +406,45 @@ const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUs
       {activeSubTab === 'students' && renderStudents()}
       {activeSubTab === 'pending' && renderPending()}
 
+      {rejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900">Reject Application</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              Provide a reason for rejecting {userPendingAction?.name ?? 'this user'}.
+            </p>
+            <textarea
+              className="mt-4 w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              rows={4}
+              value={rejectReason}
+              onChange={(event) => setRejectReason(event.target.value)}
+              placeholder="Reason for rejection"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeRejectModal}
+                className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={submitReject}
+                disabled={actionLoadingId === userPendingAction?.id}
+                className={`inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white ${
+                  actionLoadingId === userPendingAction?.id
+                    ? 'bg-red-300 cursor-not-allowed'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {actionLoadingId === userPendingAction?.id ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showUserModal && selectedUser && (
         <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -365,3 +488,9 @@ const UsersTab = ({ teachers = [], students = [], pendingUsers = [], onApproveUs
 };
 
 export default UsersTab;
+
+
+
+
+
+

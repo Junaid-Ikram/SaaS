@@ -15,10 +15,17 @@ const TabContent = ({
   teacherCount,
   studentCount,
   classes,
+  classesMeta,
+  classesSummary,
+  classesFilters,
+  classesLoading,
+  onLoadClasses,
   zoomCredits,
   subscriptionUsage,
   teachers,
   students,
+  teachersSummary,
+  studentsSummary,
   pendingUsers,
   onApproveUser,
   onRejectUser,
@@ -51,6 +58,8 @@ const TabContent = ({
             teachers={teachers}
             students={students}
             pendingUsers={pendingUsers}
+            teacherSummary={teachersSummary}
+            studentSummary={studentsSummary}
             onApproveUser={onApproveUser}
             onRejectUser={onRejectUser}
           />
@@ -79,6 +88,11 @@ const TabContent = ({
           <ClassesTab
             key="classes"
             classes={classes}
+            summary={classesSummary}
+            meta={classesMeta}
+            filters={classesFilters}
+            loading={classesLoading}
+            onChangeFilters={onLoadClasses}
             activeSubTab={activeSubTab}
             setActiveSubTab={setActiveSubTab}
           />

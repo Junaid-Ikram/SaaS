@@ -14,6 +14,28 @@ const EMPTY_SUBSCRIPTION_USAGE = {
   recentActivity: [],
 };
 
+const EMPTY_USER_SUMMARY = {
+  approved: 0,
+  pending: 0,
+  rejected: 0,
+  inactive: 0,
+};
+
+const EMPTY_CLASSES_SUMMARY = {
+  upcoming: 0,
+  ongoing: 0,
+  ended: 0,
+  cancelled: 0,
+};
+
+const DEFAULT_CLASSES_FILTERS = {
+  page: 1,
+  limit: 10,
+  status: 'ALL',
+  search: '',
+  teacherId: 'all',
+};
+
 const safeLocaleDate = (value) => {
   if (!value) return '—';
   const date = new Date(value);
@@ -98,6 +120,10 @@ const useAcademyData = () => {
     },
   });
   const [classes, setClasses] = useState([]);
+  const [classesMeta, setClassesMeta] = useState(null);
+  const [classesSummary, setClassesSummary] = useState(EMPTY_CLASSES_SUMMARY);
+  const [classesFilters, setClassesFilters] = useState(DEFAULT_CLASSES_FILTERS);
+  const [classesLoading, setClassesLoading] = useState(false);
   const [zoomCredits, setZoomCredits] = useState({
     available: 0,
     used: 0,
@@ -110,6 +136,8 @@ const useAcademyData = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
+  const [teachersSummary, setTeachersSummary] = useState(EMPTY_USER_SUMMARY);
+  const [studentsSummary, setStudentsSummary] = useState(EMPTY_USER_SUMMARY);
   const [resources, setResources] = useState([]);
   const [payments, setPayments] = useState([]);
 
@@ -121,14 +149,14 @@ const useAcademyData = () => {
   }, [user]);
 
   const mapTeacherRecord = useCallback(
-    (teacher, classesByTeacher) => ({
+    (teacher) => ({
       id: teacher.id,
       name: buildDisplayName(teacher),
       email: teacher.email,
       role: normaliseRole(teacher.role),
       status: teacher.status,
       joinDate: safeLocaleDate(teacher.createdAt),
-      classes: classesByTeacher[teacher.id] ?? 0,
+      classes: teacher._count?.teachingClasses ?? 0,
       phoneNumber: teacher.phoneNumber ?? '',
     }),
     [],
@@ -142,7 +170,7 @@ const useAcademyData = () => {
       role: normaliseRole(student.role),
       status: student.status,
       joinDate: safeLocaleDate(student.createdAt),
-      enrolledClasses: student.metadata?.enrolledClasses ?? 0,
+      enrolledClasses: student._count?.classParticipants ?? 0,
       phoneNumber: student.phoneNumber ?? '',
     }),
     [],
@@ -157,23 +185,86 @@ const useAcademyData = () => {
     requestDate: safeLocaleDate(pending.createdAt),
   }), []);
 
-  const buildRecentActivity = useCallback((mappedClasses, mappedPending) => {
-    const classActivity = mappedClasses.slice(0, 3).map((cls) => ({
-      type: 'class',
-      description: `Scheduled "${cls.title}"`,
-      date: safeLocaleDate(cls.date),
-    }));
+  const fetchClasses = useCallback(
+    async (overrides = {}) => {
+      const nextFilters = { ...classesFilters, ...overrides };
+      const params = new URLSearchParams();
+      params.set('page', String(nextFilters.page ?? 1));
+      params.set('limit', String(nextFilters.limit ?? 10));
+      if (nextFilters.status && nextFilters.status !== 'ALL') {
+        params.set('status', nextFilters.status);
+      }
+      if (nextFilters.teacherId && nextFilters.teacherId !== 'all') {
+        params.set('teacherId', nextFilters.teacherId);
+      }
+      if (nextFilters.search) {
+        params.set('search', nextFilters.search);
+      }
 
-    const pendingActivity = mappedPending.slice(0, 2).map((userRecord) => ({
-      type: 'user',
-      description: `New ${userRecord.role === 'teacher' ? 'teacher' : 'student'} application from ${userRecord.name}`,
-      date: userRecord.requestDate,
-    }));
+      setClassesLoading(true);
+      try {
+        const response = await apiRequest(`/classes?${params.toString()}`);
+        if (response) {
+          const mapped = Array.isArray(response.data) ? response.data.map(mapClassRecord) : [];
+          setClasses(mapped);
+          setClassesMeta(response.meta ?? null);
+          setClassesSummary(response.summary ?? EMPTY_CLASSES_SUMMARY);
+          setClassesFilters(nextFilters);
+        }
+      } catch (err) {
+        console.error('Failed to fetch classes', err);
+      } finally {
+        setClassesLoading(false);
+      }
+    },
+    [classesFilters, mapClassRecord],
+  );
 
-    return [...classActivity, ...pendingActivity];
-  }, []);
+  const loadUserCollections = useCallback(async () => {
+    try {
+      const [
+        teachersApprovedResponse,
+        studentsApprovedResponse,
+        teachersPendingResponse,
+        studentsPendingResponse,
+      ] = await Promise.all([
+        apiRequest('/users/teachers?limit=100&page=1&status=APPROVED'),
+        apiRequest('/users/students?limit=100&page=1&status=APPROVED'),
+        apiRequest('/users/teachers?limit=100&page=1&status=PENDING'),
+        apiRequest('/users/students?limit=100&page=1&status=PENDING'),
+      ]);
 
-const loadData = useCallback(async () => {
+      const teacherSummary = teachersApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
+      const studentSummary = studentsApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
+
+      const mappedTeachers = Array.isArray(teachersApprovedResponse?.data)
+        ? teachersApprovedResponse.data.map(mapTeacherRecord)
+        : [];
+      const mappedStudents = Array.isArray(studentsApprovedResponse?.data)
+        ? studentsApprovedResponse.data.map(mapStudentRecord)
+        : [];
+
+      setTeachers(mappedTeachers);
+      setStudents(mappedStudents);
+      setTeachersSummary(teacherSummary);
+      setStudentsSummary(studentSummary);
+
+      const pendingTeachers = Array.isArray(teachersPendingResponse?.data) ? teachersPendingResponse.data : [];
+      const pendingStudents = Array.isArray(studentsPendingResponse?.data) ? studentsPendingResponse.data : [];
+      const mappedPending = [...pendingTeachers, ...pendingStudents].map(mapPendingRecord);
+      setPendingUsers(mappedPending);
+
+      setSubscriptionUsage((prev) => ({
+        ...prev,
+        studentCount: studentSummary.approved ?? prev.studentCount,
+        teacherCount: teacherSummary.approved ?? prev.teacherCount,
+      }));
+    } catch (error) {
+      console.error('Failed to load user collections', error);
+    }
+  }, [mapPendingRecord, mapStudentRecord, mapTeacherRecord]);
+
+  const loadData = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
@@ -198,10 +289,6 @@ const loadData = useCallback(async () => {
               className: tx.summary,
             }))
           : [];
-
-        if (Array.isArray(overview.upcomingClasses) && overview.upcomingClasses.length > 0) {
-          setClasses(overview.upcomingClasses.map(mapClassRecord));
-        }
 
         setAcademyData({
           id: overview.academy?.id ?? userId,
@@ -240,50 +327,22 @@ const loadData = useCallback(async () => {
               }))
             : [],
         });
+
+        setClassesSummary({
+          upcoming: overview.totals?.classes?.upcoming ?? 0,
+          ongoing: overview.totals?.classes?.ongoing ?? 0,
+          ended: overview.totals?.classes?.completedLast30Days ?? 0,
+          cancelled: 0,
+        });
       }
 
-      const [
-        classesResponse,
-        teachersApprovedResponse,
-        studentsApprovedResponse,
-        teachersPendingResponse,
-        studentsPendingResponse,
-        zoomSummary,
-        transactionsResponse,
-      ] = await Promise.all([
-        apiRequest('/classes?limit=100&page=1'),
-        apiRequest('/users/teachers?limit=100&page=1&status=APPROVED'),
-        apiRequest('/users/students?limit=100&page=1&status=APPROVED'),
-        apiRequest('/users/teachers?limit=100&page=1&status=PENDING'),
-        apiRequest('/users/students?limit=100&page=1&status=PENDING'),
+      await fetchClasses({ page: 1 });
+      await loadUserCollections();
+
+      const [zoomSummary, transactionsResponse] = await Promise.all([
         apiRequest(`/zoom-credits/${userId}/summary`).catch(() => null),
         apiRequest(`/zoom-credits/${userId}/transactions?limit=50&page=1`).catch(() => null),
       ]);
-
-      const rawClasses = Array.isArray(classesResponse?.data) ? classesResponse.data : [];
-      const mappedClasses = rawClasses.map(mapClassRecord);
-      setClasses(mappedClasses);
-
-      const classesByTeacher = mappedClasses.reduce((acc, item) => {
-        if (item.teacherId) {
-          acc[item.teacherId] = (acc[item.teacherId] ?? 0) + 1;
-        }
-        return acc;
-      }, {});
-
-      const rawTeachers = Array.isArray(teachersApprovedResponse?.data) ? teachersApprovedResponse.data : [];
-      const mappedTeachers = rawTeachers.map((teacher) => mapTeacherRecord(teacher, classesByTeacher));
-      setTeachers(mappedTeachers);
-
-      const rawStudents = Array.isArray(studentsApprovedResponse?.data) ? studentsApprovedResponse.data : [];
-      const mappedStudents = rawStudents.map(mapStudentRecord);
-      setStudents(mappedStudents);
-
-      const pendingTeacherRecords = Array.isArray(teachersPendingResponse?.data) ? teachersPendingResponse.data : [];
-      const pendingStudentRecords = Array.isArray(studentsPendingResponse?.data) ? studentsPendingResponse.data : [];
-      const rawPending = [...pendingTeacherRecords, ...pendingStudentRecords];
-      const mappedPending = rawPending.map(mapPendingRecord);
-      setPendingUsers(mappedPending);
 
       if (zoomSummary) {
         setZoomCredits((prev) => ({
@@ -304,22 +363,6 @@ const loadData = useCallback(async () => {
         }));
       }
 
-      setSubscriptionUsage((prev) => ({
-        studentLimit: prev.studentLimit || overview?.subscription?.limits?.students || 0,
-        teacherLimit: prev.teacherLimit || overview?.subscription?.limits?.teachers || 0,
-        storageLimit: prev.storageLimit || overview?.subscription?.limits?.storageGb || 0,
-        studentCount: mappedStudents.length,
-        teacherCount: mappedTeachers.length,
-        storageUsed:
-          prev.storageLimit > 0
-            ? Math.min(prev.storageLimit, mappedStudents.length * 0.5)
-            : Math.min(overview?.subscription?.limits?.storageGb ?? 0, mappedStudents.length * 0.5),
-        zoomCreditsLimit: overview?.zoomCredits?.totalCredited ?? zoomSummary?.totalCredited ?? prev.zoomCreditsLimit,
-        zoomCreditsUsed: overview?.zoomCredits?.totalDebited ?? zoomSummary?.totalDebited ?? prev.zoomCreditsUsed,
-        recentActivity:
-          prev.recentActivity.length > 0 ? prev.recentActivity : buildRecentActivity(mappedClasses, mappedPending),
-      }));
-
       setAcademyData((prev) => ({
         ...prev,
         name: overview?.academy?.name ?? prev.name ?? academyName,
@@ -331,7 +374,7 @@ const loadData = useCallback(async () => {
     } finally {
       setLoading(false);
     }
-  }, [academyName, buildRecentActivity, mapPendingRecord, mapStudentRecord, mapTeacherRecord, userId]);
+  }, [academyName, fetchClasses, loadUserCollections, mapTransactionRecord, userId]);
 
   useEffect(() => {
     loadData();
@@ -345,42 +388,20 @@ const loadData = useCallback(async () => {
       }
 
       try {
-        const updatedUser = await apiRequest(`/users/${userIdToApprove}/status`, {
+        await apiRequest(`/users/${userIdToApprove}/status`, {
           method: 'PATCH',
           body: { status: 'APPROVED' },
         });
 
         setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToApprove));
-
-        if (normaliseRole(updatedUser.role) === 'teacher') {
-          setTeachers((prev) => [
-            ...prev,
-            mapTeacherRecord(updatedUser, classes.reduce((acc, cls) => {
-              if (cls.teacherId) {
-                acc[cls.teacherId] = (acc[cls.teacherId] ?? 0) + 1;
-              }
-              return acc;
-            }, {})),
-          ]);
-          setSubscriptionUsage((prev) => ({
-            ...prev,
-            teacherCount: prev.teacherCount + 1,
-          }));
-        } else {
-          setStudents((prev) => [...prev, mapStudentRecord(updatedUser)]);
-          setSubscriptionUsage((prev) => ({
-            ...prev,
-            studentCount: prev.studentCount + 1,
-          }));
-        }
-
-        return { success: true, user: updatedUser };
+        await loadUserCollections();
+        return { success: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to approve user.';
         return { success: false, error: message };
       }
     },
-    [classes, mapStudentRecord, mapTeacherRecord, pendingUsers],
+    [loadUserCollections, pendingUsers],
   );
   const rejectPendingUser = useCallback(
     async (userIdToReject, reason) => {
@@ -401,13 +422,14 @@ const loadData = useCallback(async () => {
         });
 
         setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToReject));
+        await loadUserCollections();
         return { success: true };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to reject user.';
         return { success: false, error: message };
       }
     },
-    [pendingUsers],
+    [loadUserCollections, pendingUsers],
   );
 
   const purchaseCredits = useCallback(
@@ -443,6 +465,11 @@ const loadData = useCallback(async () => {
     refresh: loadData,
     academyData,
     classes,
+    classesMeta,
+    classesSummary,
+    classesFilters,
+    classesLoading,
+    loadClasses: fetchClasses,
     zoomCredits,
     subscriptionUsage,
     notifications,
@@ -450,6 +477,8 @@ const loadData = useCallback(async () => {
     pendingUsers,
     teachers,
     students,
+    teachersSummary,
+    studentsSummary,
     resources,
     payments,
     approvePendingUser,
@@ -461,6 +490,9 @@ const loadData = useCallback(async () => {
 };
 
 export default useAcademyData;
+
+
+
 
 
 
