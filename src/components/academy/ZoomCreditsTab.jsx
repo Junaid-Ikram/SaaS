@@ -50,7 +50,11 @@ const ZoomCreditsTab = ({ zoomCredits, onPurchaseCredits }) => {
       setError(null);
       setSuccess(null);
       setProcessingPlan(plan.id);
-      const result = await onPurchaseCredits(plan.amount);
+      const result = await onPurchaseCredits({
+        amount: plan.amount,
+        planId: plan.id,
+        currency: 'USD',
+      });
       if (result?.success === false) {
         setError(result.error ?? 'Unable to complete purchase.');
       } else {

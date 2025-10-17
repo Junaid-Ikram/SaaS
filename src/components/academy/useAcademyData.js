@@ -89,15 +89,25 @@ const formatTimeRange = (startIso, endIso, timezone) => {
 
 const mapTransactionType = (type) => (type === 'CREDIT' || type === 'TRANSFER_IN' ? 'purchase' : 'usage');
 
-const mapTransactionRecord = (record) => ({
-  id: record.id,
-  date: record.createdAt,
-  amount: record.amount,
-  type: mapTransactionType(record.type),
-  status: 'Completed',
-  transactionId: record.id,
-  className: record.metadata?.classTitle ?? record.reason ?? 'N/A',
-});
+const mapTransactionRecord = (record) => {
+  const metadata = record?.metadata ?? {};
+  const paymentStatus = typeof metadata.paymentStatus === 'string' ? metadata.paymentStatus : 'Completed';
+  const source = typeof metadata.source === 'string' ? metadata.source : null;
+  const description =
+    source === 'purchase'
+      ? record.reason ?? 'Credit purchase'
+      : metadata.classTitle ?? record.reason ?? 'N/A';
+
+  return {
+    id: record.id,
+    date: record.createdAt ?? record.date ?? new Date().toISOString(),
+    amount: record.amount,
+    type: mapTransactionType(record.type),
+    status: paymentStatus,
+    transactionId: record.id,
+    className: description,
+  };
+};
 
 const buildDisplayName = (user) => {
   const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
@@ -433,30 +443,45 @@ const useAcademyData = () => {
   );
 
   const purchaseCredits = useCallback(
-    async (amount) => {
+    async ({ amount, planId, currency = 'USD' }) => {
       if (!userId) {
         return { success: false, error: 'Unable to determine current user.' };
       }
 
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return { success: false, error: 'Amount must be a positive number.' };
+      }
+
       try {
-        await apiRequest('/zoom-credits/transactions', {
+        const payload = await apiRequest('/zoom-credits/purchase', {
           method: 'POST',
           body: {
-            userId,
-            operation: 'credit',
-            amount,
-            reason: 'Manual credit purchase from dashboard',
+            amount: Math.round(amount),
+            planId,
+            currency,
           },
         });
 
-        await loadData();
-        return { success: true };
+        if (!payload?.summary || !payload?.transaction) {
+          return { success: false, error: 'Unexpected response from server.' };
+        }
+
+        const transactionRecord = mapTransactionRecord(payload.transaction);
+
+        setZoomCredits((prev) => ({
+          available: payload.summary.balance ?? prev.available,
+          used: payload.summary.totalDebited ?? prev.used,
+          totalCredited: payload.summary.totalCredited ?? prev.totalCredited,
+          history: [transactionRecord, ...(prev.history ?? [])],
+        }));
+
+        return { success: true, transaction: transactionRecord };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to purchase credits.';
         return { success: false, error: message };
       }
     },
-    [loadData, userId],
+    [mapTransactionRecord, userId],
   );
 
   return {
