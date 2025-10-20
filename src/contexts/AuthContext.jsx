@@ -189,6 +189,36 @@ export function AuthProvider({ children }) {
     [registerViaAuth],
   );
 
+  const verifyRegistrationOtp = useCallback(async (email, otp) => {
+    try {
+      const data = await apiRequest('/auth/verify-otp', {
+        method: 'POST',
+        body: { email, otp },
+        omitAuth: true,
+        retry: false,
+      });
+      return { success: true, message: data?.message };
+    } catch (error) {
+      console.error('verifyRegistrationOtp failed', error);
+      return { success: false, error };
+    }
+  }, []);
+
+  const resendRegistrationOtp = useCallback(async (email) => {
+    try {
+      const data = await apiRequest('/auth/resend-otp', {
+        method: 'POST',
+        body: { email },
+        omitAuth: true,
+        retry: false,
+      });
+      return { success: true, message: data?.message };
+    } catch (error) {
+      console.error('resendRegistrationOtp failed', error);
+      return { success: false, error };
+    }
+  }, []);
+
   const fetchUserDetails = useCallback(async () => {
     if (!user?.id) return null;
 
@@ -232,6 +262,8 @@ export function AuthProvider({ children }) {
     registerAcademyOwner,
     registerTeacher,
     registerStudent,
+    verifyRegistrationOtp,
+    resendRegistrationOtp,
     fetchAcademies,
     fetchUserDetails,
     signIn,

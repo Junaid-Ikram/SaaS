@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUser, FaSignOutAlt, FaBars, FaTimes, FaGraduationCap, FaChalkboardTeacher, FaHome, FaInfoCircle, FaTag, FaEnvelope, FaChevronDown, FaBell, FaSearch, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaUsers, FaSignOutAlt, FaBars, FaTimes, FaGraduationCap, FaChalkboardTeacher, FaHome, FaInfoCircle, FaTag, FaEnvelope, FaChevronDown, FaBell, FaSearch, FaArrowRight, FaCog, FaChartBar } from 'react-icons/fa';
 import { HiOutlineAcademicCap } from 'react-icons/hi';
 
 const Navbar = () => {
@@ -99,7 +99,6 @@ const Navbar = () => {
             <div className="hidden lg:block">
               <div className="ml-10 flex items-center space-x-2">
                 {!user ? (
-                  // Public navigation links - only shown to non-authenticated users
                   <>
                     <Link
                       to="/"
@@ -127,13 +126,50 @@ const Navbar = () => {
                     </Link>
                   </>
                 ) : (
-                  // Dashboard link - only shown to authenticated users
-                  <Link
-                    to={getDashboardLink()}
-                    className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
-                  >
-                    Dashboard
-                  </Link>
+                  <>
+                    <Link
+                      to={getDashboardLink()}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                    >
+                      Dashboard
+                    </Link>
+                    {userRole === 'super_admin' && (
+                      <>
+                        <Link
+                          to="/super-admin/academies"
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                        >
+                          Academies
+                        </Link>
+                        <Link
+                          to="/super-admin/users"
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                        >
+                          Users
+                        </Link>
+                        <Link
+                          to="/super-admin/platform-settings"
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                        >
+                          Settings
+                        </Link>
+                        <Link
+                          to="/super-admin/reports"
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                        >
+                          Reports
+                        </Link>
+                      </>
+                    )}
+                    {userRole === 'academy_owner' && (
+                      <Link
+                        to="/academy/subscription"
+                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 border-b-2 border-transparent hover:border-primary-500 transition-all duration-200"
+                      >
+                        Subscription
+                      </Link>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -200,6 +236,27 @@ const Navbar = () => {
                                 <FaGraduationCap className="mr-3 h-4 w-4 text-gray-400" />
                                 Subscription
                               </Link>
+                            )}
+
+                            {userRole === 'super_admin' && (
+                              <>
+                                <Link to="/super-admin/academies" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                  <FaGraduationCap className="mr-3 h-4 w-4 text-gray-400" />
+                                  Academy management
+                                </Link>
+                                <Link to="/super-admin/users" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                  <FaUsers className="mr-3 h-4 w-4 text-gray-400" />
+                                  User management
+                                </Link>
+                                <Link to="/super-admin/platform-settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                  <FaCog className="mr-3 h-4 w-4 text-gray-400" />
+                                  Platform settings
+                                </Link>
+                                <Link to="/super-admin/reports" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                  <FaChartBar className="mr-3 h-4 w-4 text-gray-400" />
+                                  Reports &amp; billing
+                                </Link>
+                              </>
                             )}
                           </div>
                           
@@ -341,6 +398,38 @@ const Navbar = () => {
                         <FaGraduationCap className="h-5 w-5 text-gray-400" />
                         <span className="font-medium">Manage Subscription</span>
                       </Link>
+                    )}
+                    {userRole === 'super_admin' && (
+                      <>
+                        <Link
+                          to="/super-admin/academies"
+                          className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          <FaGraduationCap className="h-5 w-5 text-gray-400" />
+                          <span className="font-medium">Academy management</span>
+                        </Link>
+                        <Link
+                          to="/super-admin/users"
+                          className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          <FaUsers className="h-5 w-5 text-gray-400" />
+                          <span className="font-medium">User management</span>
+                        </Link>
+                        <Link
+                          to="/super-admin/platform-settings"
+                          className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          <FaCog className="h-5 w-5 text-gray-400" />
+                          <span className="font-medium">Platform settings</span>
+                        </Link>
+                        <Link
+                          to="/super-admin/reports"
+                          className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                        >
+                          <FaChartBar className="h-5 w-5 text-gray-400" />
+                          <span className="font-medium">Reports &amp; billing</span>
+                        </Link>
+                      </>
                     )}
                     <button
                       onClick={signOut}

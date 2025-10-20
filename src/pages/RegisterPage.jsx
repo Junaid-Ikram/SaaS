@@ -6,7 +6,6 @@ import {
   FaEnvelope,
   FaLock,
   FaPhone,
-  FaCheckCircle,
   FaArrowRight,
 } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
@@ -62,7 +61,6 @@ const RegisterPage = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
 
   const { registerAcademyOwner, registerTeacher, registerStudent } = useAuth();
 
@@ -71,7 +69,6 @@ const RegisterPage = () => {
     setFormData(initialFormState);
     setPasswordStrength(0);
     setError(null);
-    setSuccess(false);
   };
 
   const handleInputChange = (event) => {
@@ -163,11 +160,18 @@ const RegisterPage = () => {
       }
 
       if (!result?.success) {
-        const message = result?.error?.message ?? result?.error ?? 'Registration failed. Please try again.';
+        const message =
+          result?.error?.response?.data?.message ??
+          result?.error?.message ??
+          result?.error ??
+          'Registration failed. Please try again.';
         throw new Error(message);
       }
 
-      setSuccess(true);
+      navigate(`/verify-email?email=${encodeURIComponent(formData.email)}`, {
+        state: { email: formData.email },
+        replace: false,
+      });
     } catch (err) {
       console.error('Registration error', err);
       setError(err?.message ?? 'Unable to complete registration.');
@@ -374,22 +378,6 @@ const RegisterPage = () => {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       {error}
-                    </motion.div>
-                  )}
-
-                  {success && (
-                    <motion.div
-                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 flex items-start"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <FaCheckCircle className="mt-0.5 mr-3 text-emerald-500" />
-                      <div>
-                        <p className="font-semibold">Registration successful!</p>
-                        <p className="mt-1 text-xs text-emerald-700">
-                          We've sent a verification OTP to {formData.email}. Follow the link in the email to activate your account, then you can sign in.
-                        </p>
-                      </div>
                     </motion.div>
                   )}
 

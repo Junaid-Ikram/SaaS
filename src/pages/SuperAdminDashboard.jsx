@@ -1,433 +1,580 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import apiRequest from '../utils/apiClient';
 import { useAuth } from '../contexts/AuthContext';
 
-const SuperAdminDashboard = () => {
-  const { user, userDetails } = useAuth();
+const numberFormatter = new Intl.NumberFormat('en-US');
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: 'spring', stiffness: 100 }
-    }
-  };
-
-  const cardVariants = {
-    hidden: { scale: 0.8, opacity: 0 },
-    visible: {
-      scale: 1,
-      opacity: 1,
-      transition: { type: 'spring', stiffness: 100 }
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
     },
-    hover: {
-      scale: 1.05,
-      boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
-      transition: { type: 'spring', stiffness: 400, damping: 10 }
-    }
-  };
+  },
+};
+
+const cardVariants = {
+  hidden: { scale: 0.95, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: 'spring', stiffness: 100, damping: 18 },
+  },
+  hover: {
+    scale: 1.02,
+    boxShadow: '0 12px 20px rgba(18, 105, 63, 0.12)',
+    transition: { type: 'spring', stiffness: 320, damping: 16 },
+  },
+};
+
+const LoadingState = () => (
+  <div className="flex items-center justify-center py-20">
+    <div className="flex items-center space-x-3 text-green-600">
+      <div className="h-3 w-3 rounded-full bg-green-500 animate-bounce" />
+      <div className="h-3 w-3 rounded-full bg-green-500 animate-bounce delay-75" />
+      <div className="h-3 w-3 rounded-full bg-green-500 animate-bounce delay-150" />
+      <span className="text-sm font-medium text-gray-600">Loading live metrics…</span>
+    </div>
+  </div>
+);
+
+const ErrorState = ({ message }) => (
+  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    {message ?? 'Unable to load dashboard information. Please refresh to try again.'}
+  </div>
+);
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleString();
+  } catch (error) {
+    return value;
+  }
+};
+
+const formatDate = (value) => {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleDateString();
+  } catch (error) {
+    return value;
+  }
+};
+
+const buildDisplayName = (firstName, lastName, email) => {
+  const parts = [firstName, lastName].map((part) => (part ?? '').trim()).filter(Boolean);
+  if (parts.length > 0) {
+    return parts.join(' ');
+  }
+  return email ?? 'Unknown';
+};
+
+const SuperAdminDashboard = () => {
+  const navigate = useNavigate();
+  const { userDetails } = useAuth();
+  const [overview, setOverview] = useState(null);
+  const [academyPreview, setAcademyPreview] = useState({ data: [], summary: null, meta: null });
+  const [paymentsPreview, setPaymentsPreview] = useState({ data: [], summary: null });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      try {
+        const queryParams = new URLSearchParams({ page: '1', limit: '5' }).toString();
+
+        const [overviewResponse, academiesResponse, paymentsResponse] = await Promise.all([
+          apiRequest('/dashboard/overview'),
+          apiRequest(`/users/admins?${queryParams}`),
+          apiRequest(`/payments?${queryParams}`),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setOverview(overviewResponse);
+        setAcademyPreview({
+          data: academiesResponse?.data ?? [],
+          summary: academiesResponse?.summary ?? null,
+          meta: academiesResponse?.meta ?? null,
+        });
+        setPaymentsPreview({
+          data: paymentsResponse?.data ?? [],
+          summary: paymentsResponse?.summary ?? null,
+        });
+        setError(null);
+      } catch (err) {
+        console.error('Failed to load super admin dashboard', err);
+        if (isMounted) {
+          setError(err?.message ?? 'Failed to load dashboard data.');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    const academiesTotal = academyPreview.meta?.total ?? 0;
+    const academiesPending = academyPreview.summary?.pending ?? 0;
+    const teachersApproved = overview?.totals?.teachers?.approved ?? 0;
+    const teachersPending = overview?.totals?.teachers?.pending ?? 0;
+    const studentsApproved = overview?.totals?.students?.approved ?? 0;
+    const studentsPending = overview?.totals?.students?.pending ?? 0;
+    const upcomingClasses = overview?.totals?.classes?.upcoming ?? 0;
+    const ongoingClasses = overview?.totals?.classes?.ongoing ?? 0;
+
+    return [
+      {
+        key: 'academies',
+        title: 'Academies',
+        value: numberFormatter.format(academiesTotal),
+        hint: `${numberFormatter.format(academiesPending)} pending approval`,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253l8 4.5-8 4.5-8-4.5 8-4.5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 12.753l8 4.5 8-4.5" />
+          </svg>
+        ),
+      },
+      {
+        key: 'teachers',
+        title: 'Approved Teachers',
+        value: numberFormatter.format(teachersApproved),
+        hint: `${numberFormatter.format(teachersPending)} awaiting review`,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 11c1.657 0 3-1.567 3-3.5S13.657 4 12 4s-3 1.567-3 3.5 1.343 3.5 3 3.5z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6.5 20a5.5 5.5 0 0111 0" />
+          </svg>
+        ),
+      },
+      {
+        key: 'students',
+        title: 'Students',
+        value: numberFormatter.format(studentsApproved),
+        hint: `${numberFormatter.format(studentsPending)} pending onboarding`,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 20v-1a6 6 0 0112 0v1" />
+          </svg>
+        ),
+      },
+      {
+        key: 'classes',
+        title: 'Upcoming Classes',
+        value: numberFormatter.format(upcomingClasses),
+        hint: `${numberFormatter.format(ongoingClasses)} live right now`,
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 1" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6a9 9 0 110 18 9 9 0 010-18z" />
+          </svg>
+        ),
+      },
+    ];
+  }, [academyPreview, overview]);
+
+  const quickActions = useMemo(
+    () => [
+      {
+        label: 'Academy Management',
+        description: 'Track approvals, health, and usage',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 13.5l9-9 9 9M4.5 12H19.5V21H4.5z" />
+          </svg>
+        ),
+        action: () => navigate('/super-admin/academies'),
+      },
+      {
+        label: 'Manage Users',
+        description: 'Approve, suspend, or invite platform users',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20v-2a3 3 0 00-3-3H6a3 3 0 00-3 3v2" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 11a4 4 0 100-8 4 4 0 000 8z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21v-2a3 3 0 00-2-2.828" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 3.13a4 4 0 010 7.75" />
+          </svg>
+        ),
+        action: () => navigate('/super-admin/users'),
+      },
+      {
+        label: 'Platform Settings',
+        description: 'Configure onboarding and operational controls',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066 1.724 1.724 0 012.37 2.37 1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573 1.724 1.724 0 01-2.37 2.37 1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066 1.724 1.724 0 01-2.37-2.37 1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573 1.724 1.724 0 012.37-2.37 1.724 1.724 0 002.573-1.066z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+        action: () => navigate('/super-admin/platform-settings'),
+      },
+      {
+        label: 'Reports & Billing',
+        description: 'Monitor revenue, payments, and credit usage',
+        icon: (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6M5 21h14a2 2 0 002-2V7a2 2 0 00-.586-1.414l-4-4A2 2 0 0014 1H5a2 2 0 00-2 2v16a2 2 0 002 2z" />
+          </svg>
+        ),
+        action: () => navigate('/super-admin/reports'),
+      },
+    ],
+    [navigate],
+  );
+
+  const upcomingClasses = overview?.upcomingClasses ?? [];
+  const recentActivity = overview?.recentActivity ?? [];
+  const zoomCredits = overview?.zoomCredits;
+  const subscription = overview?.subscription;
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <motion.div
-        className="mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
         <h1 className="text-3xl font-bold text-green-800">Super Admin Dashboard</h1>
-        <p className="text-gray-600 mt-2">Manage the entire platform from here</p>
+        <p className="mt-2 text-gray-600">
+          {userDetails ? `Welcome back, ${userDetails.name}.` : 'Manage the platform with live health metrics.'}
+        </p>
       </motion.div>
 
-      {/* Overview Section */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <motion.div
-          className="bg-white rounded-lg shadow-md p-6"
-          variants={cardVariants}
-          whileHover="hover"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Total Academies</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">24</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 12%</span>
-            <span className="text-gray-500 text-sm ml-2">from last month</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="bg-white rounded-lg shadow-md p-6"
-          variants={cardVariants}
-          whileHover="hover"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Total Users</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">1,284</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 8%</span>
-            <span className="text-gray-500 text-sm ml-2">from last month</span>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="bg-white rounded-lg shadow-md p-6"
-          variants={cardVariants}
-          whileHover="hover"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-700">Active Sessions</h3>
-              <p className="text-3xl font-bold text-green-600 mt-2">342</p>
-            </div>
-            <div className="bg-green-100 p-3 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-          </div>
-          <div className="mt-4">
-            <span className="text-green-500 text-sm font-semibold">↑ 15%</span>
-            <span className="text-gray-500 text-sm ml-2">from last week</span>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Academy Management */}
-        <motion.div
-          className="lg:col-span-2 bg-white rounded-lg shadow-md p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Academy Management</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academy Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">Tech Academy</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">John Smith</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">156</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-green-600 hover:text-green-900 mr-3">View</button>
-                    <button className="text-red-600 hover:text-red-900">Suspend</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">Design School</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">Sarah Johnson</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">89</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-green-600 hover:text-green-900 mr-3">View</button>
-                    <button className="text-red-600 hover:text-red-900">Suspend</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">Code Institute</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">Michael Brown</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">212</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <button className="text-green-600 hover:text-green-900 mr-3">View</button>
-                    <button className="text-green-600 hover:text-green-900">Approve</button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
-              View All Academies
-            </button>
-          </div>
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          className="bg-white rounded-lg shadow-md p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
-          <div className="space-y-4">
-            <motion.button
-              className="w-full flex items-center justify-between p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Create New Academy
-              </span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-            
-            <motion.button
-              className="w-full flex items-center justify-between p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Manage Users
-              </span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-            
-            <motion.button
-              className="w-full flex items-center justify-between p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Platform Settings
-              </span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-            
-            <motion.button
-              className="w-full flex items-center justify-between p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <span className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                View Reports
-              </span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </motion.button>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Subscription Plans Management */}
-      <motion.div
-        className="mt-8 bg-white rounded-lg shadow-md p-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-gray-800">Subscription Plans</h2>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
-          >
-            Add New Plan
-          </motion.button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Basic Plan */}
-          <motion.div
-            className="border border-gray-200 rounded-lg p-6 flex flex-col"
-            variants={cardVariants}
-            whileHover="hover"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Basic Plan</h3>
-              <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Active</span>
-            </div>
-            <div className="mb-4">
-              <span className="text-3xl font-bold text-gray-900">$29</span>
-              <span className="text-gray-500 text-sm ml-1">/month</span>
-            </div>
-            <ul className="mb-6 space-y-2 flex-grow">
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Up to 5 Teachers</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Up to 50 Students</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Basic Analytics</span>
-              </li>
-            </ul>
-            <div className="flex space-x-2">
-              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
-              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
-            </div>
+      {loading ? (
+        <LoadingState />
+      ) : error ? (
+        <ErrorState message={error} />
+      ) : (
+        <>
+          <motion.div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8" variants={containerVariants} initial="hidden" animate="visible">
+            {stats.map((stat) => (
+              <motion.div key={stat.key} className="bg-white rounded-lg border border-green-100 p-6 shadow-sm" variants={cardVariants} whileHover="hover">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">{stat.title}</p>
+                    <p className="mt-2 text-3xl font-bold text-green-700">{stat.value}</p>
+                    <p className="mt-1 text-sm text-gray-500">{stat.hint}</p>
+                  </div>
+                  <div className="rounded-full bg-green-50 p-3">{stat.icon}</div>
+                </div>
+              </motion.div>
+            ))}
           </motion.div>
 
-          {/* Pro Plan */}
-          <motion.div
-            className="border border-gray-200 rounded-lg p-6 flex flex-col bg-green-50 border-green-200"
-            variants={cardVariants}
-            whileHover="hover"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Pro Plan</h3>
-              <span className="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Popular</span>
-            </div>
-            <div className="mb-4">
-              <span className="text-3xl font-bold text-gray-900">$79</span>
-              <span className="text-gray-500 text-sm ml-1">/month</span>
-            </div>
-            <ul className="mb-6 space-y-2 flex-grow">
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Up to 15 Teachers</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Up to 150 Students</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Advanced Analytics</span>
-              </li>
-            </ul>
-            <div className="flex space-x-2">
-              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
-              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
-            </div>
-          </motion.div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-8">
+            <motion.div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800">Academy Management</h2>
+                  <p className="text-sm text-gray-500">
+                    {academyPreview.meta?.total
+                      ? `${numberFormatter.format(academyPreview.meta.total)} academies on the platform`
+                      : 'Live academy enrolments'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="rounded-md bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700"
+                  onClick={() => navigate('/super-admin/academies')}
+                >
+                  View All
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Academy Owner
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Email
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Status
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        Joined
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {academyPreview.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-6 text-center text-sm text-gray-500">
+                          No academies found yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      academyPreview.data.map((academy) => (
+                        <tr key={academy.id}>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                            {buildDisplayName(academy.firstName, academy.lastName, academy.email)}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{academy.email}</td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                academy.status === 'APPROVED'
+                                  ? 'bg-green-100 text-green-700'
+                                  : academy.status === 'PENDING'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-red-100 text-red-700'
+                              }`}
+                            >
+                              {academy.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatDate(academy.createdAt)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
 
-          {/* Enterprise Plan */}
-          <motion.div
-            className="border border-gray-200 rounded-lg p-6 flex flex-col"
-            variants={cardVariants}
-            whileHover="hover"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Enterprise Plan</h3>
-              <span className="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">Premium</span>
-            </div>
-            <div className="mb-4">
-              <span className="text-3xl font-bold text-gray-900">$199</span>
-              <span className="text-gray-500 text-sm ml-1">/month</span>
-            </div>
-            <ul className="mb-6 space-y-2 flex-grow">
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Unlimited Teachers</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Unlimited Students</span>
-              </li>
-              <li className="flex items-center">
-                <svg className="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <span className="text-gray-600">Premium Support</span>
-              </li>
-            </ul>
-            <div className="flex space-x-2">
-              <button className="text-green-600 hover:text-green-900 text-sm font-medium">Edit</button>
-              <button className="text-red-600 hover:text-red-900 text-sm font-medium">Deactivate</button>
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
+            <motion.div className="bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-800">Quick Actions</h2>
+                <p className="text-sm text-gray-500">Jump straight into the most common workflows</p>
+              </div>
+              <div className="space-y-3 px-4 py-4">
+                {quickActions.map((item) => (
+                  <motion.button
+                    key={item.label}
+                    type="button"
+                    className="w-full rounded-lg border border-gray-100 bg-green-50 px-4 py-3 text-left shadow-sm transition-colors hover:bg-green-100"
+                    onClick={item.action}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-start space-x-3">
+                        <span className="mt-1">{item.icon}</span>
+                        <div>
+                          <p className="font-semibold text-green-700">{item.label}</p>
+                          <p className="text-sm text-gray-600">{item.description}</p>
+                        </div>
+                      </div>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-8">
+            <motion.div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-800">Upcoming Classes</h2>
+                <p className="text-sm text-gray-500">Next five sessions scheduled by your academies</p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {upcomingClasses.length === 0 ? (
+                  <div className="px-6 py-10 text-center text-sm text-gray-500">No upcoming classes scheduled.</div>
+                ) : (
+                  upcomingClasses.map((cls) => (
+                    <div key={cls.id} className="px-6 py-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-base font-semibold text-gray-800">{cls.title}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                            <span className="inline-flex items-center">
+                              <svg className="mr-1 h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 4h10a2 2 0 012 2v9a2 2 0 01-2 2H7a2 2 0 01-2-2v-9a2 2 0 012-2z" />
+                              </svg>
+                              {formatDateTime(cls.scheduledStart)}
+                            </span>
+                            {cls.teacher ? <span>• {cls.teacher.name}</span> : null}
+                            <span>• {cls.participantsCount} participants</span>
+                          </div>
+                        </div>
+                        <span className="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-semibold uppercase text-green-700">
+                          {cls.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+
+            <motion.div className="bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-800">Zoom Credits</h2>
+                <p className="text-sm text-gray-500">Balance and most recent credit activity</p>
+              </div>
+              {zoomCredits ? (
+                <div className="px-6 py-5 space-y-4">
+                  <div>
+                    <p className="text-xs uppercase text-gray-400">Balance</p>
+                    <p className="mt-1 text-3xl font-semibold text-green-700">{numberFormatter.format(zoomCredits.balance)}</p>
+                    <div className="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                      <span>{numberFormatter.format(zoomCredits.totalCredited)} credited</span>
+                      <span>•</span>
+                      <span>{numberFormatter.format(zoomCredits.totalDebited)} debited</span>
+                    </div>
+                  </div>
+                  <div className="rounded-md bg-gray-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-gray-500">Recent activity</p>
+                    <div className="mt-2 space-y-2">
+                      {zoomCredits.recentTransactions.length === 0 ? (
+                        <p className="text-xs text-gray-500">No transactions recorded.</p>
+                      ) : (
+                        zoomCredits.recentTransactions.map((tx) => (
+                          <div key={tx.id} className="rounded-md bg-white px-3 py-2 shadow-sm">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-800">{tx.summary}</span>
+                              <span className="text-xs font-semibold text-green-600">{tx.type}</span>
+                            </div>
+                            <div className="mt-1 flex items-center justify-between text-xs text-gray-500">
+                              <span>{formatDateTime(tx.timestamp)}</span>
+                              <span>{numberFormatter.format(tx.amount)} credits</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="px-6 py-6 text-sm text-gray-500">Zoom credit data unavailable.</div>
+              )}
+            </motion.div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <motion.div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}>
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-800">Latest Payments</h2>
+                <p className="text-sm text-gray-500">
+                  {paymentsPreview.summary
+                    ? `${currencyFormatter.format(paymentsPreview.summary.totalAmount)} processed across ${numberFormatter.format(
+                        paymentsPreview.summary.totalCount,
+                      )} payments`
+                    : 'Recent billing activity across the platform'}
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Reference</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {paymentsPreview.data.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-6 text-center text-sm text-gray-500">
+                          No payments recorded yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      paymentsPreview.data.map((payment) => (
+                        <tr key={payment.id}>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                            {payment.reference ?? 'Manual entry'}
+                            <p className="text-xs text-gray-500">{payment.userName ?? payment.userId}</p>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                payment.status === 'COMPLETED'
+                                  ? 'bg-green-100 text-green-700'
+                                  : payment.status === 'PENDING'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : payment.status === 'FAILED'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {payment.status}
+                            </span>
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-700">
+                            {currencyFormatter.format(payment.amount)} {payment.currency}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{formatDateTime(payment.createdAt)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+
+            <motion.div className="bg-white rounded-lg shadow-sm border border-gray-100" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16 }}>
+              <div className="border-b border-gray-100 px-6 py-4">
+                <h2 className="text-lg font-semibold text-gray-800">Recent Activity</h2>
+                <p className="text-sm text-gray-500">System-wide approvals, classes, and credit events</p>
+              </div>
+              <div className="max-h-96 overflow-y-auto px-6 py-5 space-y-4">
+                {recentActivity.length === 0 ? (
+                  <p className="text-sm text-gray-500">No activity recorded.</p>
+                ) : (
+                  recentActivity.map((entry) => (
+                    <div key={entry.id} className="relative pl-6">
+                      <span className="absolute left-0 top-2 block h-3 w-3 rounded-full bg-green-500" />
+                      <p className="text-sm font-medium text-gray-800">{entry.message}</p>
+                      <p className="text-xs text-gray-500">{formatDateTime(entry.timestamp)}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+              {subscription ? (
+                <div className="border-t border-gray-100 px-6 py-5">
+                  <p className="text-sm font-semibold text-gray-800">Subscription Plan</p>
+                  <p className="text-sm text-gray-600">{subscription.plan}</p>
+                  <div className="mt-3 grid grid-cols-3 gap-3">
+                    <div className="rounded-md bg-gray-50 p-3 text-center">
+                      <p className="text-xs uppercase text-gray-400">Teacher usage</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {numberFormatter.format(subscription.usage.teachers)}/{numberFormatter.format(subscription.limits.teachers)}
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-gray-50 p-3 text-center">
+                      <p className="text-xs uppercase text-gray-400">Student usage</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {numberFormatter.format(subscription.usage.students)}/{numberFormatter.format(subscription.limits.students)}
+                      </p>
+                    </div>
+                    <div className="rounded-md bg-gray-50 p-3 text-center">
+                      <p className="text-xs uppercase text-gray-400">Storage</p>
+                      <p className="text-sm font-semibold text-gray-800">
+                        {numberFormatter.format(subscription.usage.storageGb)} GB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </motion.div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
