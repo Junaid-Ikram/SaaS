@@ -19,8 +19,9 @@ const AcademyDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [activeSubTab, setActiveSubTab] = useState('upcoming');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { isMobile } = useWindowSize();
 
-  // Get window size using custom hook
+  // Load academy dashboard data
   const {
     loading,
     error,
@@ -34,6 +35,7 @@ const AcademyDashboard = () => {
     classesLoading,
     loadClasses,
     resources,
+    resourcesLoading,
     notifications,
     unreadNotifications,
     pendingUsers,
@@ -42,10 +44,15 @@ const AcademyDashboard = () => {
     teachersSummary,
     studentsSummary,
     payments,
+    paymentsLoading,
     subscriptionUsage,
     approvePendingUser,
     rejectPendingUser,
     purchaseCredits,
+    uploadResource,
+    updateResource,
+    deleteResource,
+    refreshResources,
     setNotifications,
     setUnreadNotifications,
   } = useAcademyData();

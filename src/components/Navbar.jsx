@@ -358,14 +358,56 @@ const Navbar = () => {
                   </Link>
                 </>
               ) : (
-                // Dashboard link for mobile
-                <Link
-                  to={getDashboardLink()}
-                  className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
-                >
-                  <FaChalkboardTeacher className="h-5 w-5 text-gray-400" />
-                  <span className="font-medium">Dashboard</span>
-                </Link>
+                <>
+                  <Link
+                    to={getDashboardLink()}
+                    className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <FaChalkboardTeacher className="h-5 w-5 text-gray-400" />
+                    <span className="font-medium">Dashboard</span>
+                  </Link>
+                  {userRole === 'super_admin' && (
+                    <>
+                      <Link
+                        to="/super-admin/academies"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <FaGraduationCap className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium">Academies</span>
+                      </Link>
+                      <Link
+                        to="/super-admin/users"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <FaUsers className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium">Users</span>
+                      </Link>
+                      <Link
+                        to="/super-admin/platform-settings"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <FaCog className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium">Platform settings</span>
+                      </Link>
+                      <Link
+                        to="/super-admin/reports"
+                        className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                      >
+                        <FaChartBar className="h-5 w-5 text-gray-400" />
+                        <span className="font-medium">Reports &amp; billing</span>
+                      </Link>
+                    </>
+                  )}
+                  {userRole === 'academy_owner' && (
+                    <Link
+                      to="/academy/subscription"
+                      className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
+                    >
+                      <FaGraduationCap className="h-5 w-5 text-gray-400" />
+                      <span className="font-medium">Subscription</span>
+                    </Link>
+                  )}
+                </>
               )}
             </div>
             <div className="pt-3 mt-3 border-t border-gray-100">

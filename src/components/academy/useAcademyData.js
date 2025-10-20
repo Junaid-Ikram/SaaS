@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiRequest from '../../utils/apiClient';
 
@@ -162,6 +162,7 @@ const useAcademyData = () => {
   const [classesMeta, setClassesMeta] = useState(null);
   const [classesSummary, setClassesSummary] = useState(EMPTY_CLASSES_SUMMARY);
   const [classesFilters, setClassesFilters] = useState(DEFAULT_CLASSES_FILTERS);
+  const classesFiltersRef = useRef(DEFAULT_CLASSES_FILTERS);
   const [classesLoading, setClassesLoading] = useState(false);
   const [zoomCredits, setZoomCredits] = useState({
     available: 0,
@@ -181,6 +182,10 @@ const useAcademyData = () => {
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [payments, setPayments] = useState([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+
+  useEffect(() => {
+    classesFiltersRef.current = classesFilters;
+  }, [classesFilters]);
 
   const userId = user?.id ?? null;
   const academyName = useMemo(() => {
@@ -228,7 +233,8 @@ const useAcademyData = () => {
 
   const fetchClasses = useCallback(
     async (overrides = {}) => {
-      const nextFilters = { ...classesFilters, ...overrides };
+      const currentFilters = classesFiltersRef.current ?? DEFAULT_CLASSES_FILTERS;
+      const nextFilters = { ...currentFilters, ...overrides };
       const params = new URLSearchParams();
       params.set('page', String(nextFilters.page ?? 1));
       params.set('limit', String(nextFilters.limit ?? 10));
@@ -250,6 +256,7 @@ const useAcademyData = () => {
           setClasses(mapped);
           setClassesMeta(response.meta ?? null);
           setClassesSummary(response.summary ?? EMPTY_CLASSES_SUMMARY);
+          classesFiltersRef.current = nextFilters;
           setClassesFilters(nextFilters);
         }
       } catch (err) {
@@ -258,7 +265,7 @@ const useAcademyData = () => {
         setClassesLoading(false);
       }
     },
-    [classesFilters, mapClassRecord],
+    [mapClassRecord],
   );
 
   const loadResources = useCallback(async () => {
@@ -632,6 +639,7 @@ const useAcademyData = () => {
 };
 
 export default useAcademyData;
+
 
 
 
