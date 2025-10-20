@@ -1,4 +1,4 @@
-ï»¿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FaSearch,
@@ -26,6 +26,7 @@ const UsersTab = ({
   studentSummary = SUMMARY_TEMPLATE,
   onApproveUser,
   onRejectUser,
+  initialSubTab = 'teachers',
 }) => {
   const [activeSubTab, setActiveSubTab] = useState('teachers');
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,6 +38,16 @@ const UsersTab = ({
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [userPendingAction, setUserPendingAction] = useState(null);
+
+  useEffect(() => {
+    const normalised = (initialSubTab ?? '').toLowerCase();
+    if (!normalised) {
+      return;
+    }
+    if (['teachers', 'students', 'pending'].includes(normalised) && normalised !== activeSubTab) {
+      setActiveSubTab(normalised);
+    }
+  }, [initialSubTab, activeSubTab]);
 
   const teacherStats = teacherSummary ?? SUMMARY_TEMPLATE;
   const studentStats = studentSummary ?? SUMMARY_TEMPLATE;
@@ -50,7 +61,7 @@ const UsersTab = ({
         key: 'teachers',
         label: 'Approved Teachers',
         value: teacherStats.approved ?? teachers.length,
-        hint: `${teacherPending} pending â€¢ ${teacherStats.inactive ?? 0} inactive`,
+        hint: `${teacherPending} pending / ${teacherStats.inactive ?? 0} inactive`,
         Icon: FaChalkboardTeacher,
       },
       {
@@ -196,7 +207,7 @@ const UsersTab = ({
                         <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{teacher.email}</p>
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${teacher.joinDate ?? 'â€”'}`, `${teacher.classes ?? 0} classes`)}
+                        {renderStatsRow(`Joined ${teacher.joinDate ?? '—'}`, `${teacher.classes ?? 0} classes`)}
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
@@ -232,7 +243,7 @@ const UsersTab = ({
                         <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{student.email}</p>
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${student.joinDate ?? 'â€”'}`, `${student.enrolledClasses ?? 0} classes`)}
+                        {renderStatsRow(`Joined ${student.joinDate ?? '—'}`, `${student.enrolledClasses ?? 0} classes`)}
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
@@ -271,7 +282,7 @@ const UsersTab = ({
                         </div>
                         <div className="mt-2 text-sm text-gray-500">
                           {renderStatsRow(
-                            `Requested ${user.requestDate ?? 'â€”'}`,
+                            `Requested ${user.requestDate ?? '—'}`,
                             `Role: ${(user.role ?? '').replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`,
                           )}
                         </div>
@@ -284,7 +295,7 @@ const UsersTab = ({
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60"
                           >
                             <FaUserCheck className="mr-1" />
-                            {isProcessing ? 'Processingâ€¦' : 'Approve'}
+                            {isProcessing ? 'Processing…' : 'Approve'}
                           </button>
                           <button
                             onClick={() => handleReject(user)}
@@ -292,7 +303,7 @@ const UsersTab = ({
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
                           >
                             <FaUserTimes className="mr-1" />
-                            {isProcessing ? 'Processingâ€¦' : 'Reject'}
+                            {isProcessing ? 'Processing…' : 'Reject'}
                           </button>
                         </div>
                       </div>

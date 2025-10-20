@@ -153,7 +153,7 @@ const SuperAdminPlatformSettingsPage = () => {
 
     if (config.type === 'boolean') {
       return (
-        <label key={config.key} htmlFor={id} className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 bg-white px-4 py-3 shadow-sm">
+        <label key={config.key} htmlFor={id} className="flex items-start justify-between gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-medium text-gray-800">{config.label}</p>
             <p className="mt-1 text-xs text-gray-500">{config.description}</p>
@@ -195,7 +195,7 @@ const SuperAdminPlatformSettingsPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-green-800">Platform Settings</h1>
         <p className="mt-2 text-gray-600">
@@ -203,8 +203,8 @@ const SuperAdminPlatformSettingsPage = () => {
         </p>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-lg border border-gray-100 bg-white shadow-sm">
-        <div className="border-b border-gray-100 px-6 py-4">
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-200 px-6 py-4">
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-gray-800">Global controls</h2>
@@ -225,7 +225,7 @@ const SuperAdminPlatformSettingsPage = () => {
         </div>
 
         {loading ? (
-          <div className="px-6 py-10 text-center text-sm text-gray-500">Loading platform settings…</div>
+          <div className="px-6 py-10 text-center text-sm text-gray-500">Loading platform settings...</div>
         ) : error ? (
           <div className="px-6 py-10">
             <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
@@ -236,7 +236,7 @@ const SuperAdminPlatformSettingsPage = () => {
               {SETTINGS_METADATA.map((setting) => renderField(setting))}
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-600">
                 {Object.keys(dirtyDiff).length > 0 ? (
                   <span className="text-green-600">{Object.keys(dirtyDiff).length} pending change(s)</span>
@@ -251,7 +251,7 @@ const SuperAdminPlatformSettingsPage = () => {
                   disabled={saving}
                   className="rounded-md bg-green-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {saving ? 'Saving…' : 'Save changes'}
+                  {saving ? 'Saving...' : 'Save changes'}
                 </button>
               </div>
             </div>

@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiRequest from '../../utils/apiClient';
 
@@ -37,9 +37,9 @@ const DEFAULT_CLASSES_FILTERS = {
 };
 
 const safeLocaleDate = (value) => {
-  if (!value) return '�';
+  if (!value) return 'N/A';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '�' : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
 };
 
 const normaliseRole = (role) => (role ? role.toLowerCase() : null);
@@ -639,6 +639,7 @@ const useAcademyData = () => {
 };
 
 export default useAcademyData;
+
 
 
 

@@ -12,14 +12,30 @@ import DashboardHeader from './DashboardHeader';
 import TabContent from './TabContent';
 
 // Import animation variants
-import { contentVariants, sidebarVariants, mobileSidebarVariants, navItemVariants } from './animationVariants';
+import { contentVariants } from './animationVariants';
 
 const AcademyDashboard = () => {
   // State for UI
   const [activeTab, setActiveTab] = useState('overview');
   const [activeSubTab, setActiveSubTab] = useState('upcoming');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [requestedUsersTab, setRequestedUsersTab] = useState('teachers');
   const { isMobile } = useWindowSize();
+
+  const navigateToTab = (tab, options = {}) => {
+    if (typeof tab === 'string') {
+      setActiveTab(tab);
+    }
+
+    if (options?.subTab) {
+      if (tab === 'classes') {
+        setActiveSubTab(options.subTab);
+      }
+      if (tab === 'users') {
+        setRequestedUsersTab(options.subTab);
+      }
+    }
+  };
 
   // Load academy dashboard data
   const {
@@ -81,7 +97,7 @@ const AcademyDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex relative">
+    <div className="relative min-h-screen bg-gray-50">
       {/* Mobile sidebar toggle */}
       <MobileToggle 
         isMobile={isMobile} 
@@ -90,10 +106,10 @@ const AcademyDashboard = () => {
       />
       
       {/* Sidebar */}
-      <Sidebar 
+      <Sidebar
         academyData={academyData}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => navigateToTab(tab)}
         sidebarCollapsed={sidebarCollapsed}
         setSidebarCollapsed={setSidebarCollapsed}
         isMobile={isMobile}
@@ -102,7 +118,7 @@ const AcademyDashboard = () => {
       
       {/* Main content */}
       <motion.main 
-        className="flex-1 p-6 transition-all duration-300 overflow-hidden"
+        className="min-h-screen px-4 pb-10 pt-6 transition-all duration-300 overflow-x-hidden sm:px-6 lg:px-12"
         variants={contentVariants}
         animate={getContentVariant()}
         initial={isMobile ? 'full' : 'open'}
@@ -146,6 +162,8 @@ const AcademyDashboard = () => {
           onApproveUser={approvePendingUser}
           onRejectUser={rejectPendingUser}
           onPurchaseCredits={purchaseCredits}
+          requestedUsersTab={requestedUsersTab}
+          onNavigateTab={navigateToTab}
           notifications={notifications}
           setNotifications={setNotifications}
           setUnreadNotifications={setUnreadNotifications}

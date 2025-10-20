@@ -43,6 +43,8 @@ const TabContent = ({
   onRefreshResources,
   activeSubTab,
   setActiveSubTab,
+  requestedUsersTab = 'teachers',
+  onNavigateTab = () => {},
 }) => {
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -55,6 +57,8 @@ const TabContent = ({
             classes={classes}
             zoomCredits={zoomCredits}
             subscriptionUsage={subscriptionUsage}
+            onNavigate={onNavigateTab}
+            onShowPurchaseCredits={() => onNavigateTab('zoom')}
           />
         );
       case 'users':
@@ -68,6 +72,7 @@ const TabContent = ({
             studentSummary={studentsSummary}
             onApproveUser={onApproveUser}
             onRejectUser={onRejectUser}
+            initialSubTab={requestedUsersTab}
           />
         );
       case 'notifications':

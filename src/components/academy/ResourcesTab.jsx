@@ -49,11 +49,14 @@ const fileIcon = (type) => {
 };
 
 const formatFileSize = (bytes) => {
-  if (!bytes || Number.isNaN(bytes)) return '—';
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) {
+    return '--';
+  }
   const base = 1024;
   const units = ['B', 'KB', 'MB', 'GB'];
-  const index = Math.floor(Math.log(bytes) / Math.log(base));
-  return `${(bytes / Math.pow(base, index)).toFixed(2)} ${units[index]}`;
+  const index = Math.min(units.length - 1, Math.floor(Math.log(size) / Math.log(base)));
+  return `${(size / Math.pow(base, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
 };
 
 const ResourcesTab = ({
@@ -211,7 +214,7 @@ const ResourcesTab = ({
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Resources Library</h3>
@@ -257,7 +260,7 @@ const ResourcesTab = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="relative w-full md:w-72">
             <FaSearch className="pointer-events-none absolute inset-y-0 left-3 my-auto h-4 w-4 text-gray-400" />

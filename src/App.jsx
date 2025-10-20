@@ -1,11 +1,12 @@
 import React, { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useNavigate, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import SubscriptionEnforcement from './components/SubscriptionEnforcement';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import DashboardNavbar from './components/dashboard/DashboardNavbar';
 import { setupDatabase } from './utils/setupDatabase';
 
 // Lazy load pages for better performance
@@ -63,6 +64,7 @@ const LoadingSpinner = () => (
 const AppContent = () => {
   const { user, userRole, loading, dbInitialized, setDatabaseInitialized } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Function to get dashboard link based on user role
   const getDashboardLink = () => {
@@ -97,12 +99,16 @@ const AppContent = () => {
       initDb();
     }
   }, [dbInitialized]);
+
+  const dashboardPrefixes = ['/dashboard', '/academy', '/teacher', '/student', '/super-admin'];
+  const isDashboardRoute = dashboardPrefixes.some((prefix) => location.pathname.startsWith(prefix));
+  const containerPadding = isDashboardRoute ? 'pt-24' : 'pt-20';
   
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
+      {isDashboardRoute ? <DashboardNavbar /> : <Navbar />}
       <Suspense fallback={<LoadingSpinner />}>
-        <div className="flex-grow pt-16"> {/* Add padding top to account for fixed navbar */}
+        <div className={`flex-grow ${containerPadding}`}> {/* Offset for fixed navbar */}
           <Routes>
             {/* Public Routes - Redirect if authenticated */}
             <Route path="/" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <HomePage />} />
@@ -184,7 +190,7 @@ const AppContent = () => {
           </Routes>
         </div>
       </Suspense>
-      <Footer />
+      {!isDashboardRoute && <Footer />}
     </div>
   );
 };

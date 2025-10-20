@@ -2,23 +2,56 @@
 
 // Sidebar variants
 export const sidebarVariants = {
-  open: { width: '256px', boxShadow: '5px 0 15px rgba(0, 0, 0, 0.1)', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  mini: { width: '64px', boxShadow: '5px 0 15px rgba(0, 0, 0, 0.1)', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  closed: { x: '-100%', boxShadow: '0 0 0 rgba(0, 0, 0, 0)', transition: { type: 'spring', stiffness: 300, damping: 30 } }
+  open: {
+    width: '288px',
+    boxShadow: '0 26px 65px rgba(15, 23, 42, 0.35)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
+  mini: {
+    width: '96px',
+    boxShadow: '0 24px 55px rgba(15, 23, 42, 0.28)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
+  closed: {
+    x: '-108%',
+    boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
 };
 
-// Mobile sidebar variants
 export const mobileSidebarVariants = {
-  open: { x: 0, boxShadow: '5px 0 15px rgba(0, 0, 0, 0.1)', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  mini: { x: 0, width: '64px', boxShadow: '5px 0 15px rgba(0, 0, 0, 0.1)', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  closed: { x: '-100%', boxShadow: '0 0 0 rgba(0, 0, 0, 0)', transition: { type: 'spring', stiffness: 300, damping: 30 } }
+  open: {
+    x: 0,
+    width: '288px',
+    boxShadow: '0 26px 65px rgba(15, 23, 42, 0.35)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
+  mini: {
+    x: 0,
+    width: '96px',
+    boxShadow: '0 24px 55px rgba(15, 23, 42, 0.28)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
+  closed: {
+    x: '-108%',
+    boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
+    transition: { type: 'spring', stiffness: 340, damping: 30 },
+  },
 };
 
-// Content variants
 export const contentVariants = {
-  open: { marginLeft: '256px', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  mini: { marginLeft: '64px', transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  full: { marginLeft: '0px', transition: { type: 'spring', stiffness: 300, damping: 30 } }
+  open: {
+    marginLeft: '320px',
+    transition: { type: 'spring', stiffness: 320, damping: 28 },
+  },
+  mini: {
+    marginLeft: '128px',
+    transition: { type: 'spring', stiffness: 320, damping: 28 },
+  },
+  full: {
+    marginLeft: '0px',
+    transition: { type: 'spring', stiffness: 320, damping: 28 },
+  },
 };
 
 // Navigation item variants
