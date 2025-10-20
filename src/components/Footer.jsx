@@ -1,6 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
 import { FaFacebookF, FaGithub, FaLinkedinIn, FaTwitter } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
 const navSections = [
   {
@@ -44,11 +43,11 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-900 text-slate-100">
-      <div className="mx-auto max-w-6xl px-6 py-14">
+      <div className="max-w-6xl px-6 mx-auto py-14">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <Link to="/" className="flex items-center gap-3 text-lg font-semibold text-white">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-xl font-bold">
+              <span className="flex items-center justify-center w-10 h-10 text-xl font-bold rounded-xl bg-emerald-500">
                 Q
               </span>
               Q Edu
@@ -57,15 +56,15 @@ const Footer = () => {
               All-in-one operating system for modern academies. Power enrolment, live classes,
               payment workflows, and community management from a single dashboard.
             </p>
-            <div className="mt-6 flex items-center gap-3">
+            <div className="flex items-center gap-3 mt-6">
               {socialLinks.map(({ label, href, Icon }) => (
                 <a
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 text-slate-300 transition hover:border-emerald-400 hover:text-white"
+                  className="flex items-center justify-center transition border rounded-full h-9 w-9 border-slate-700 text-slate-300 hover:border-emerald-400 hover:text-white"
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="w-4 h-4" />
                 </a>
               ))}
             </div>
@@ -73,7 +72,7 @@ const Footer = () => {
 
           {navSections.map((section) => (
             <div key={section.title}>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-300">
                 {section.title}
               </h3>
               <ul className="mt-4 space-y-3 text-sm">
@@ -81,7 +80,7 @@ const Footer = () => {
                   <li key={link.label}>
                     <Link
                       to={link.to}
-                      className="text-slate-400 transition hover:text-white"
+                      className="transition text-slate-400 hover:text-white"
                     >
                       {link.label}
                     </Link>
@@ -92,13 +91,13 @@ const Footer = () => {
           ))}
 
           <div className="md:col-span-2 lg:col-span-1">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+            <h3 className="text-sm font-semibold tracking-wide uppercase text-slate-300">
               Stay in the loop
             </h3>
             <p className="mt-4 text-sm text-slate-400">
               Subscribe for release notes, invite-only webinars, and early feature previews.
             </p>
-            <form className="mt-4 flex flex-col gap-3 sm:flex-row">
+            <form className="flex flex-col gap-3 mt-4 sm:flex-row">
               <label htmlFor="footer-email" className="sr-only">
                 Email address
               </label>
@@ -106,11 +105,11 @@ const Footer = () => {
                 id="footer-email"
                 type="email"
                 placeholder="you@example.com"
-                className="w-full rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-4 py-2 text-sm text-white border rounded-lg border-slate-700 bg-slate-800 placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white transition rounded-lg bg-emerald-500 hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-slate-900"
               >
                 Subscribe
               </button>
@@ -118,7 +117,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-slate-700 pt-6 text-sm text-slate-500">
+        <div className="pt-6 mt-12 text-sm border-t border-slate-700 text-slate-500">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <p>&copy; {currentYear} Q Edu. All rights reserved.</p>
             <div className="flex flex-wrap gap-4">

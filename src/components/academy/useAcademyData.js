@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import apiRequest from '../../utils/apiClient';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToast } from "../../contexts/ToastContext";
+import apiRequest from "../../utils/apiClient";
 
 const EMPTY_SUBSCRIPTION_USAGE = {
   studentLimit: 0,
@@ -31,37 +32,42 @@ const EMPTY_CLASSES_SUMMARY = {
 const DEFAULT_CLASSES_FILTERS = {
   page: 1,
   limit: 10,
-  status: 'ALL',
-  search: '',
-  teacherId: 'all',
+  status: "ALL",
+  search: "",
+  teacherId: "all",
 };
 
 const safeLocaleDate = (value) => {
-  if (!value) return 'N/A';
+  if (!value) return "N/A";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? "N/A" : date.toLocaleDateString();
 };
 
 const normaliseRole = (role) => (role ? role.toLowerCase() : null);
 
 const mapClassRecord = (record) => {
-  const status = (record.status ?? 'UPCOMING').toLowerCase();
+  const status = (record.status ?? "UPCOMING").toLowerCase();
   const teacherName = record.teacher
-    ? `${record.teacher.firstName} ${record.teacher.lastName ?? ''}`.trim() || record.teacher.email
-    : 'Unassigned';
+    ? `${record.teacher.firstName} ${record.teacher.lastName ?? ""}`.trim() ||
+      record.teacher.email
+    : "Unassigned";
 
   return {
     id: record.id,
     title: record.title,
-    description: record.description ?? '',
+    description: record.description ?? "",
     teacher: teacherName,
     teacherId: record.teacher?.id ?? null,
-    schedule: formatTimeRange(record.scheduledStart, record.scheduledEnd, record.timezone),
+    schedule: formatTimeRange(
+      record.scheduledStart,
+      record.scheduledEnd,
+      record.timezone,
+    ),
     date: record.scheduledStart,
     endDate: record.scheduledEnd,
     duration: record.durationMinutes,
     students_count: record.participantsCount ?? 0,
-    attendance: status === 'ended' ? record.participantsCount ?? 0 : null,
+    attendance: status === "ended" ? (record.participantsCount ?? 0) : null,
     status,
     timezone: record.timezone,
     zoomLink: record.zoomJoinUrl,
@@ -69,34 +75,41 @@ const mapClassRecord = (record) => {
 };
 
 const formatTimeRange = (startIso, endIso, timezone) => {
-  if (!startIso || !endIso) return '';
+  if (!startIso || !endIso) return "";
   try {
     const start = new Date(startIso);
     const end = new Date(endIso);
-    const dateFormatter = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeZone: timezone });
+    const dateFormatter = new Intl.DateTimeFormat(undefined, {
+      dateStyle: "medium",
+      timeZone: timezone,
+    });
     const timeFormatter = new Intl.DateTimeFormat(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
       timeZone: timezone,
     });
 
     const date = dateFormatter.format(start);
     return `${date}, ${timeFormatter.format(start)} - ${timeFormatter.format(end)}`;
   } catch (error) {
-    return '';
+    return "";
   }
 };
 
-const mapTransactionType = (type) => (type === 'CREDIT' || type === 'TRANSFER_IN' ? 'purchase' : 'usage');
+const mapTransactionType = (type) =>
+  type === "CREDIT" || type === "TRANSFER_IN" ? "purchase" : "usage";
 
 const mapTransactionRecord = (record) => {
   const metadata = record?.metadata ?? {};
-  const paymentStatus = typeof metadata.paymentStatus === 'string' ? metadata.paymentStatus : 'Completed';
-  const source = typeof metadata.source === 'string' ? metadata.source : null;
+  const paymentStatus =
+    typeof metadata.paymentStatus === "string"
+      ? metadata.paymentStatus
+      : "Completed";
+  const source = typeof metadata.source === "string" ? metadata.source : null;
   const description =
-    source === 'purchase'
-      ? record.reason ?? 'Credit purchase'
-      : metadata.classTitle ?? record.reason ?? 'N/A';
+    source === "purchase"
+      ? (record.reason ?? "Credit purchase")
+      : (metadata.classTitle ?? record.reason ?? "N/A");
 
   return {
     id: record.id,
@@ -112,50 +125,51 @@ const mapTransactionRecord = (record) => {
 const mapResourceRecord = (record) => ({
   id: record.id,
   title: record.title,
-  description: record.description ?? '',
-  type: record.fileType ?? 'other',
-  mimeType: record.mimeType ?? '',
+  description: record.description ?? "",
+  type: record.fileType ?? "other",
+  mimeType: record.mimeType ?? "",
   size: record.fileSize ?? 0,
   classId: record.classId ?? null,
-  class: record.classTitle ?? (record.classId ? 'Class Resource' : 'General'),
+  class: record.classTitle ?? (record.classId ? "Class Resource" : "General"),
   uploaderId: record.uploaderId,
-  uploader: record.uploaderName ?? 'Unknown',
+  uploader: record.uploaderName ?? "Unknown",
   downloadUrl: record.fileUrl,
   fileKey: record.fileKey ?? null,
-  visibility: record.visibility ?? 'ACADEMY',
+  visibility: record.visibility ?? "ACADEMY",
   uploadDate: record.createdAt ?? new Date().toISOString(),
   metadata: record.metadata ?? null,
 });
 
 const mapPaymentRecord = (payment) => ({
   id: payment.id,
-  description: payment.reference ?? payment.provider ?? 'Payment',
-  student: payment.userName ?? 'Unknown',
+  description: payment.reference ?? payment.provider ?? "Payment",
+  student: payment.userName ?? "Unknown",
   date: safeLocaleDate(payment.createdAt),
   amount: Number(payment.amount ?? 0),
-  status: (payment.status ?? '').toLowerCase(),
-  type: payment.provider ?? 'internal',
-  currency: payment.currency ?? 'USD',
+  status: (payment.status ?? "").toLowerCase(),
+  type: payment.provider ?? "internal",
+  currency: payment.currency ?? "USD",
 });
 
 const buildDisplayName = (user) => {
-  const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
+  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
   return name || user.email;
 };
 
 const useAcademyData = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [academyData, setAcademyData] = useState({
-    id: '',
-    name: 'Your Academy',
+    id: "",
+    name: "Your Academy",
     createdAt: new Date().toISOString(),
     subscription: {
-      plan: 'Professional',
+      plan: "Professional",
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'active',
+      status: "active",
     },
   });
   const [classes, setClasses] = useState([]);
@@ -170,7 +184,9 @@ const useAcademyData = () => {
     totalCredited: 0,
     history: [],
   });
-  const [subscriptionUsage, setSubscriptionUsage] = useState(EMPTY_SUBSCRIPTION_USAGE);
+  const [subscriptionUsage, setSubscriptionUsage] = useState(
+    EMPTY_SUBSCRIPTION_USAGE,
+  );
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [pendingUsers, setPendingUsers] = useState([]);
@@ -189,9 +205,9 @@ const useAcademyData = () => {
 
   const userId = user?.id ?? null;
   const academyName = useMemo(() => {
-    if (!user) return 'Your Academy';
-    const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
-    return name ? `${name}'s Academy` : 'Your Academy';
+    if (!user) return "Your Academy";
+    const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
+    return name ? `${name}'s Academy` : "Your Academy";
   }, [user]);
 
   const mapTeacherRecord = useCallback(
@@ -203,7 +219,7 @@ const useAcademyData = () => {
       status: teacher.status,
       joinDate: safeLocaleDate(teacher.createdAt),
       classes: teacher._count?.teachingClasses ?? 0,
-      phoneNumber: teacher.phoneNumber ?? '',
+      phoneNumber: teacher.phoneNumber ?? "",
     }),
     [],
   );
@@ -217,42 +233,48 @@ const useAcademyData = () => {
       status: student.status,
       joinDate: safeLocaleDate(student.createdAt),
       enrolledClasses: student._count?.classParticipants ?? 0,
-      phoneNumber: student.phoneNumber ?? '',
+      phoneNumber: student.phoneNumber ?? "",
     }),
     [],
   );
 
-  const mapPendingRecord = useCallback((pending) => ({
-    id: pending.id,
-    name: buildDisplayName(pending),
-    email: pending.email,
-    role: normaliseRole(pending.role),
-    status: pending.status,
-    requestDate: safeLocaleDate(pending.createdAt),
-  }), []);
+  const mapPendingRecord = useCallback(
+    (pending) => ({
+      id: pending.id,
+      name: buildDisplayName(pending),
+      email: pending.email,
+      role: normaliseRole(pending.role),
+      status: pending.status,
+      requestDate: safeLocaleDate(pending.createdAt),
+    }),
+    [],
+  );
 
   const fetchClasses = useCallback(
     async (overrides = {}) => {
-      const currentFilters = classesFiltersRef.current ?? DEFAULT_CLASSES_FILTERS;
+      const currentFilters =
+        classesFiltersRef.current ?? DEFAULT_CLASSES_FILTERS;
       const nextFilters = { ...currentFilters, ...overrides };
       const params = new URLSearchParams();
-      params.set('page', String(nextFilters.page ?? 1));
-      params.set('limit', String(nextFilters.limit ?? 10));
-      if (nextFilters.status && nextFilters.status !== 'ALL') {
-        params.set('status', nextFilters.status);
+      params.set("page", String(nextFilters.page ?? 1));
+      params.set("limit", String(nextFilters.limit ?? 10));
+      if (nextFilters.status && nextFilters.status !== "ALL") {
+        params.set("status", nextFilters.status);
       }
-      if (nextFilters.teacherId && nextFilters.teacherId !== 'all') {
-        params.set('teacherId', nextFilters.teacherId);
+      if (nextFilters.teacherId && nextFilters.teacherId !== "all") {
+        params.set("teacherId", nextFilters.teacherId);
       }
       if (nextFilters.search) {
-        params.set('search', nextFilters.search);
+        params.set("search", nextFilters.search);
       }
 
       setClassesLoading(true);
       try {
         const response = await apiRequest(`/classes?${params.toString()}`);
         if (response) {
-          const mapped = Array.isArray(response.data) ? response.data.map(mapClassRecord) : [];
+          const mapped = Array.isArray(response.data)
+            ? response.data.map(mapClassRecord)
+            : [];
           setClasses(mapped);
           setClassesMeta(response.meta ?? null);
           setClassesSummary(response.summary ?? EMPTY_CLASSES_SUMMARY);
@@ -260,7 +282,7 @@ const useAcademyData = () => {
           setClassesFilters(nextFilters);
         }
       } catch (err) {
-        console.error('Failed to fetch classes', err);
+        console.error("Failed to fetch classes", err);
       } finally {
         setClassesLoading(false);
       }
@@ -271,11 +293,13 @@ const useAcademyData = () => {
   const loadResources = useCallback(async () => {
     setResourcesLoading(true);
     try {
-      const response = await apiRequest('/resources?limit=100&page=1');
-      const mapped = Array.isArray(response?.data) ? response.data.map(mapResourceRecord) : [];
+      const response = await apiRequest("/resources?limit=100&page=1");
+      const mapped = Array.isArray(response?.data)
+        ? response.data.map(mapResourceRecord)
+        : [];
       setResources(mapped);
     } catch (error) {
-      console.error('Failed to load resources', error);
+      console.error("Failed to load resources", error);
     } finally {
       setResourcesLoading(false);
     }
@@ -284,11 +308,13 @@ const useAcademyData = () => {
   const loadPayments = useCallback(async () => {
     setPaymentsLoading(true);
     try {
-      const response = await apiRequest('/payments?limit=100&page=1');
-      const mapped = Array.isArray(response?.data) ? response.data.map(mapPaymentRecord) : [];
+      const response = await apiRequest("/payments?limit=100&page=1");
+      const mapped = Array.isArray(response?.data)
+        ? response.data.map(mapPaymentRecord)
+        : [];
       setPayments(mapped);
     } catch (error) {
-      console.error('Failed to load payments', error);
+      console.error("Failed to load payments", error);
     } finally {
       setPaymentsLoading(false);
     }
@@ -302,14 +328,16 @@ const useAcademyData = () => {
         teachersPendingResponse,
         studentsPendingResponse,
       ] = await Promise.all([
-        apiRequest('/users/teachers?limit=100&page=1&status=APPROVED'),
-        apiRequest('/users/students?limit=100&page=1&status=APPROVED'),
-        apiRequest('/users/teachers?limit=100&page=1&status=PENDING'),
-        apiRequest('/users/students?limit=100&page=1&status=PENDING'),
+        apiRequest("/users/teachers?limit=100&page=1&status=APPROVED"),
+        apiRequest("/users/students?limit=100&page=1&status=APPROVED"),
+        apiRequest("/users/teachers?limit=100&page=1&status=PENDING"),
+        apiRequest("/users/students?limit=100&page=1&status=PENDING"),
       ]);
 
-      const teacherSummary = teachersApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
-      const studentSummary = studentsApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
+      const teacherSummary =
+        teachersApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
+      const studentSummary =
+        studentsApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
 
       const mappedTeachers = Array.isArray(teachersApprovedResponse?.data)
         ? teachersApprovedResponse.data.map(mapTeacherRecord)
@@ -323,9 +351,15 @@ const useAcademyData = () => {
       setTeachersSummary(teacherSummary);
       setStudentsSummary(studentSummary);
 
-      const pendingTeachers = Array.isArray(teachersPendingResponse?.data) ? teachersPendingResponse.data : [];
-      const pendingStudents = Array.isArray(studentsPendingResponse?.data) ? studentsPendingResponse.data : [];
-      const mappedPending = [...pendingTeachers, ...pendingStudents].map(mapPendingRecord);
+      const pendingTeachers = Array.isArray(teachersPendingResponse?.data)
+        ? teachersPendingResponse.data
+        : [];
+      const pendingStudents = Array.isArray(studentsPendingResponse?.data)
+        ? studentsPendingResponse.data
+        : [];
+      const mappedPending = [...pendingTeachers, ...pendingStudents].map(
+        mapPendingRecord,
+      );
       setPendingUsers(mappedPending);
 
       setSubscriptionUsage((prev) => ({
@@ -334,7 +368,7 @@ const useAcademyData = () => {
         teacherCount: teacherSummary.approved ?? prev.teacherCount,
       }));
     } catch (error) {
-      console.error('Failed to load user collections', error);
+      console.error("Failed to load user collections", error);
     }
   }, [mapPendingRecord, mapStudentRecord, mapTeacherRecord]);
 
@@ -349,16 +383,18 @@ const useAcademyData = () => {
 
     try {
       const nowIso = new Date().toISOString();
-      const overview = await apiRequest('/dashboard/overview');
+      const overview = await apiRequest("/dashboard/overview");
 
       if (overview) {
-        const overviewTransactions = Array.isArray(overview.zoomCredits?.recentTransactions)
+        const overviewTransactions = Array.isArray(
+          overview.zoomCredits?.recentTransactions,
+        )
           ? overview.zoomCredits.recentTransactions.map((tx) => ({
               id: tx.id,
               date: tx.timestamp,
               amount: tx.amount,
               type: mapTransactionType(tx.type),
-              status: 'Completed',
+              status: "Completed",
               transactionId: tx.id,
               className: tx.summary,
             }))
@@ -367,12 +403,15 @@ const useAcademyData = () => {
         setAcademyData({
           id: overview.academy?.id ?? userId,
           name: overview.academy?.name ?? academyName,
-          createdAt: overview.academy?.createdAt ?? overview.academy?.updatedAt ?? nowIso,
+          createdAt:
+            overview.academy?.createdAt ??
+            overview.academy?.updatedAt ??
+            nowIso,
           subscription: {
-            plan: overview.subscription?.plan ?? 'Professional',
+            plan: overview.subscription?.plan ?? "Professional",
             startDate: overview.academy?.createdAt ?? nowIso,
             endDate: overview.academy?.updatedAt ?? nowIso,
-            status: 'active',
+            status: "active",
           },
         });
 
@@ -416,7 +455,9 @@ const useAcademyData = () => {
 
       const [zoomSummary, transactionsResponse] = await Promise.all([
         apiRequest(`/zoom-credits/${userId}/summary`).catch(() => null),
-        apiRequest(`/zoom-credits/${userId}/transactions?limit=50&page=1`).catch(() => null),
+        apiRequest(
+          `/zoom-credits/${userId}/transactions?limit=50&page=1`,
+        ).catch(() => null),
       ]);
 
       if (zoomSummary) {
@@ -444,12 +485,29 @@ const useAcademyData = () => {
         updatedAt: nowIso,
       }));
     } catch (fetchError) {
-      const message = fetchError instanceof Error ? fetchError.message : 'Failed to load academy data';
+      const message =
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Failed to load academy data";
       setError(message);
+      showToast({
+        status: "error",
+        title: "Dashboard refresh failed",
+        description: message,
+      });
     } finally {
       setLoading(false);
     }
-  }, [academyName, fetchClasses, loadPayments, loadResources, loadUserCollections, mapTransactionRecord, userId]);
+  }, [
+    academyName,
+    fetchClasses,
+    loadPayments,
+    loadResources,
+    loadUserCollections,
+    mapTransactionRecord,
+    showToast,
+    userId,
+  ]);
 
   useEffect(() => {
     loadData();
@@ -457,69 +515,99 @@ const useAcademyData = () => {
 
   const approvePendingUser = useCallback(
     async (userIdToApprove) => {
-      const pendingUser = pendingUsers.find((candidate) => candidate.id === userIdToApprove);
+      const pendingUser = pendingUsers.find(
+        (candidate) => candidate.id === userIdToApprove,
+      );
       if (!pendingUser) {
-        return { success: false, error: 'Pending user not found.' };
+        return { success: false, error: "Pending user not found." };
       }
 
       try {
         await apiRequest(`/users/${userIdToApprove}/status`, {
-          method: 'PATCH',
-          body: { status: 'APPROVED' },
+          method: "PATCH",
+          body: { status: "APPROVED" },
         });
 
-        setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToApprove));
+        setPendingUsers((prev) =>
+          prev.filter((userRecord) => userRecord.id !== userIdToApprove),
+        );
         await loadUserCollections();
+        showToast({
+          status: "success",
+          title: "User approved",
+          description: `${buildDisplayName(pendingUser)} now has access.`,
+        });
         return { success: true };
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to approve user.';
+        const message =
+          err instanceof Error ? err.message : "Unable to approve user.";
+        showToast({
+          status: "error",
+          title: "Approval failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadUserCollections, pendingUsers],
+    [loadUserCollections, pendingUsers, showToast],
   );
   const rejectPendingUser = useCallback(
     async (userIdToReject, reason) => {
-      const pendingUser = pendingUsers.find((candidate) => candidate.id === userIdToReject);
+      const pendingUser = pendingUsers.find(
+        (candidate) => candidate.id === userIdToReject,
+      );
       if (!pendingUser) {
-        return { success: false, error: 'Pending user not found.' };
+        return { success: false, error: "Pending user not found." };
       }
 
       const trimmedReason = reason?.trim();
       if (!trimmedReason) {
-        return { success: false, error: 'Rejection reason is required.' };
+        return { success: false, error: "Rejection reason is required." };
       }
 
       try {
         await apiRequest(`/users/${userIdToReject}/status`, {
-          method: 'PATCH',
-          body: { status: 'REJECTED', rejectionReason: trimmedReason },
+          method: "PATCH",
+          body: { status: "REJECTED", rejectionReason: trimmedReason },
         });
 
-        setPendingUsers((prev) => prev.filter((userRecord) => userRecord.id !== userIdToReject));
+        setPendingUsers((prev) =>
+          prev.filter((userRecord) => userRecord.id !== userIdToReject),
+        );
         await loadUserCollections();
+        showToast({
+          status: "success",
+          title: "User rejected",
+          description: `${buildDisplayName(pendingUser)} has been notified.`,
+        });
         return { success: true };
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to reject user.';
+        const message =
+          err instanceof Error ? err.message : "Unable to reject user.";
+        showToast({
+          status: "error",
+          title: "Rejection failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadUserCollections, pendingUsers],
+    [loadUserCollections, pendingUsers, showToast],
   );
 
   const purchaseCredits = useCallback(
-    async ({ amount, planId, currency = 'USD' }) => {
+    async ({ amount, planId, currency = "USD" }) => {
       if (!userId) {
-        return { success: false, error: 'Unable to determine current user.' };
+        return { success: false, error: "Unable to determine current user." };
       }
 
       if (!Number.isFinite(amount) || amount <= 0) {
-        return { success: false, error: 'Amount must be a positive number.' };
+        return { success: false, error: "Amount must be a positive number." };
       }
 
       try {
-        const payload = await apiRequest('/zoom-credits/purchase', {
-          method: 'POST',
+        const payload = await apiRequest("/zoom-credits/purchase", {
+          method: "POST",
           body: {
             amount: Math.round(amount),
             planId,
@@ -528,7 +616,7 @@ const useAcademyData = () => {
         });
 
         if (!payload?.summary || !payload?.transaction) {
-          return { success: false, error: 'Unexpected response from server.' };
+          return { success: false, error: "Unexpected response from server." };
         }
 
         const transactionRecord = mapTransactionRecord(payload.transaction);
@@ -541,64 +629,107 @@ const useAcademyData = () => {
         }));
 
         await loadPayments();
-
+        showToast({
+          status: "success",
+          title: "Credits purchased",
+          description: `${transactionRecord.amount} credits added to your balance.`,
+        });
         return { success: true, transaction: transactionRecord };
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unable to purchase credits.';
+        const message =
+          err instanceof Error ? err.message : "Unable to purchase credits.";
+        showToast({
+          status: "error",
+          title: "Purchase failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadPayments, mapTransactionRecord, userId],
+    [loadPayments, mapTransactionRecord, showToast, userId],
   );
 
   const uploadResource = useCallback(
     async (payload) => {
       try {
-        await apiRequest('/resources', {
-          method: 'POST',
+        await apiRequest("/resources", {
+          method: "POST",
           body: payload,
         });
         await loadResources();
+        showToast({
+          status: "success",
+          title: "Resource uploaded",
+          description: "The resource is now available to your academy.",
+        });
         return { success: true };
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to upload resource.';
+        const message =
+          error instanceof Error ? error.message : "Unable to upload resource.";
+        showToast({
+          status: "error",
+          title: "Upload failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadResources],
+    [loadResources, showToast],
   );
 
   const updateResource = useCallback(
     async (resourceId, updates) => {
       try {
         await apiRequest(`/resources/${resourceId}`, {
-          method: 'PATCH',
+          method: "PATCH",
           body: updates,
         });
         await loadResources();
+        showToast({
+          status: "success",
+          title: "Resource updated",
+          description: "Changes have been saved successfully.",
+        });
         return { success: true };
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to update resource.';
+        const message =
+          error instanceof Error ? error.message : "Unable to update resource.";
+        showToast({
+          status: "error",
+          title: "Update failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadResources],
+    [loadResources, showToast],
   );
 
   const deleteResource = useCallback(
     async (resourceId) => {
       try {
         await apiRequest(`/resources/${resourceId}`, {
-          method: 'DELETE',
+          method: "DELETE",
         });
         await loadResources();
+        showToast({
+          status: "success",
+          title: "Resource removed",
+          description: "The resource is no longer available to users.",
+        });
         return { success: true };
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unable to delete resource.';
+        const message =
+          error instanceof Error ? error.message : "Unable to delete resource.";
+        showToast({
+          status: "error",
+          title: "Deletion failed",
+          description: message,
+        });
         return { success: false, error: message };
       }
     },
-    [loadResources],
+    [loadResources, showToast],
   );
 
   return {
@@ -639,32 +770,3 @@ const useAcademyData = () => {
 };
 
 export default useAcademyData;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
