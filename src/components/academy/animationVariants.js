@@ -3,54 +3,54 @@
 // Sidebar variants
 export const sidebarVariants = {
   open: {
-    width: '288px',
-    boxShadow: '0 26px 65px rgba(15, 23, 42, 0.35)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    width: '240px',
+    boxShadow: '0 18px 40px rgba(6, 95, 70, 0.25)',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   mini: {
-    width: '96px',
-    boxShadow: '0 24px 55px rgba(15, 23, 42, 0.28)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    width: '72px',
+    boxShadow: '0 14px 30px rgba(6, 95, 70, 0.18)',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   closed: {
     x: '-108%',
     boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
 };
 
 export const mobileSidebarVariants = {
   open: {
     x: 0,
-    width: '288px',
-    boxShadow: '0 26px 65px rgba(15, 23, 42, 0.35)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    width: '240px',
+    boxShadow: '0 18px 40px rgba(6, 95, 70, 0.25)',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   mini: {
     x: 0,
-    width: '96px',
-    boxShadow: '0 24px 55px rgba(15, 23, 42, 0.28)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    width: '72px',
+    boxShadow: '0 14px 30px rgba(6, 95, 70, 0.18)',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   closed: {
     x: '-108%',
     boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
-    transition: { type: 'spring', stiffness: 340, damping: 30 },
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
 };
 
 export const contentVariants = {
   open: {
-    marginLeft: '320px',
-    transition: { type: 'spring', stiffness: 320, damping: 28 },
+    marginLeft: '240px',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   mini: {
-    marginLeft: '128px',
-    transition: { type: 'spring', stiffness: 320, damping: 28 },
+    marginLeft: '88px',
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
   full: {
     marginLeft: '0px',
-    transition: { type: 'spring', stiffness: 320, damping: 28 },
+    transition: { type: 'spring', stiffness: 520, damping: 26 },
   },
 };
 
@@ -93,3 +93,8 @@ export const tabVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   exit: { opacity: 0, y: -20, transition: { duration: 0.3 } }
 };
+
+
+
+
+

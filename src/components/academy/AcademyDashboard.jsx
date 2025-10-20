@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 // Import custom hooks
@@ -7,7 +7,6 @@ import useAcademyData from './useAcademyData';
 
 // Import components
 import Sidebar from './Sidebar';
-import MobileToggle from './MobileToggle';
 import DashboardHeader from './DashboardHeader';
 import TabContent from './TabContent';
 
@@ -21,6 +20,12 @@ const AcademyDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [requestedUsersTab, setRequestedUsersTab] = useState('teachers');
   const { isMobile } = useWindowSize();
+
+
+
+  useEffect(() => {
+    setSidebarCollapsed(isMobile);
+  }, [isMobile]);
 
   const navigateToTab = (tab, options = {}) => {
     if (typeof tab === 'string') {
@@ -98,13 +103,6 @@ const AcademyDashboard = () => {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Mobile sidebar toggle */}
-      <MobileToggle 
-        isMobile={isMobile} 
-        sidebarCollapsed={sidebarCollapsed} 
-        setSidebarCollapsed={setSidebarCollapsed} 
-      />
-      
       {/* Sidebar */}
       <Sidebar
         academyData={academyData}
@@ -118,7 +116,7 @@ const AcademyDashboard = () => {
       
       {/* Main content */}
       <motion.main 
-        className="min-h-screen px-4 pb-10 pt-6 transition-all duration-300 overflow-x-hidden sm:px-6 lg:px-12"
+        className="min-h-screen px-4 pb-10 pt-6 transition-all duration-300 overflow-x-hidden sm:px-6 lg:px-8"
         variants={contentVariants}
         animate={getContentVariant()}
         initial={isMobile ? 'full' : 'open'}
@@ -186,6 +184,8 @@ const AcademyDashboard = () => {
 };
 
 export default AcademyDashboard;
+
+
 
 
 

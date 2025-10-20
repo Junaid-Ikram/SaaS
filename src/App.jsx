@@ -6,7 +6,7 @@ import RoleBasedRoute from './components/RoleBasedRoute';
 import SubscriptionEnforcement from './components/SubscriptionEnforcement';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import DashboardNavbar from './components/dashboard/DashboardNavbar';
+import DashboardFooter from './components/dashboard/DashboardFooter';
 import { setupDatabase } from './utils/setupDatabase';
 
 // Lazy load pages for better performance
@@ -105,8 +105,8 @@ const AppContent = () => {
   const containerPadding = isDashboardRoute ? 'pt-24' : 'pt-20';
   
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {isDashboardRoute ? <DashboardNavbar /> : <Navbar />}
+    <div className={`min-h-screen flex flex-col ${isDashboardRoute ? 'bg-[#f5fbf7]' : 'bg-gray-50'}`}>
+      <Navbar />
       <Suspense fallback={<LoadingSpinner />}>
         <div className={`flex-grow ${containerPadding}`}> {/* Offset for fixed navbar */}
           <Routes>
@@ -190,7 +190,7 @@ const AppContent = () => {
           </Routes>
         </div>
       </Suspense>
-      {!isDashboardRoute && <Footer />}
+      {isDashboardRoute ? <DashboardFooter /> : <Footer />}
     </div>
   );
 };
