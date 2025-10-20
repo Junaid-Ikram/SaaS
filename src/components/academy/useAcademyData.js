@@ -37,9 +37,9 @@ const DEFAULT_CLASSES_FILTERS = {
 };
 
 const safeLocaleDate = (value) => {
-  if (!value) return '—';
+  if (!value) return '�';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? '�' : date.toLocaleDateString();
 };
 
 const normaliseRole = (role) => (role ? role.toLowerCase() : null);
@@ -109,6 +109,35 @@ const mapTransactionRecord = (record) => {
   };
 };
 
+const mapResourceRecord = (record) => ({
+  id: record.id,
+  title: record.title,
+  description: record.description ?? '',
+  type: record.fileType ?? 'other',
+  mimeType: record.mimeType ?? '',
+  size: record.fileSize ?? 0,
+  classId: record.classId ?? null,
+  class: record.classTitle ?? (record.classId ? 'Class Resource' : 'General'),
+  uploaderId: record.uploaderId,
+  uploader: record.uploaderName ?? 'Unknown',
+  downloadUrl: record.fileUrl,
+  fileKey: record.fileKey ?? null,
+  visibility: record.visibility ?? 'ACADEMY',
+  uploadDate: record.createdAt ?? new Date().toISOString(),
+  metadata: record.metadata ?? null,
+});
+
+const mapPaymentRecord = (payment) => ({
+  id: payment.id,
+  description: payment.reference ?? payment.provider ?? 'Payment',
+  student: payment.userName ?? 'Unknown',
+  date: safeLocaleDate(payment.createdAt),
+  amount: Number(payment.amount ?? 0),
+  status: (payment.status ?? '').toLowerCase(),
+  type: payment.provider ?? 'internal',
+  currency: payment.currency ?? 'USD',
+});
+
 const buildDisplayName = (user) => {
   const name = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim();
   return name || user.email;
@@ -149,7 +178,9 @@ const useAcademyData = () => {
   const [teachersSummary, setTeachersSummary] = useState(EMPTY_USER_SUMMARY);
   const [studentsSummary, setStudentsSummary] = useState(EMPTY_USER_SUMMARY);
   const [resources, setResources] = useState([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
   const [payments, setPayments] = useState([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
 
   const userId = user?.id ?? null;
   const academyName = useMemo(() => {
@@ -229,6 +260,32 @@ const useAcademyData = () => {
     },
     [classesFilters, mapClassRecord],
   );
+
+  const loadResources = useCallback(async () => {
+    setResourcesLoading(true);
+    try {
+      const response = await apiRequest('/resources?limit=100&page=1');
+      const mapped = Array.isArray(response?.data) ? response.data.map(mapResourceRecord) : [];
+      setResources(mapped);
+    } catch (error) {
+      console.error('Failed to load resources', error);
+    } finally {
+      setResourcesLoading(false);
+    }
+  }, []);
+
+  const loadPayments = useCallback(async () => {
+    setPaymentsLoading(true);
+    try {
+      const response = await apiRequest('/payments?limit=100&page=1');
+      const mapped = Array.isArray(response?.data) ? response.data.map(mapPaymentRecord) : [];
+      setPayments(mapped);
+    } catch (error) {
+      console.error('Failed to load payments', error);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, []);
 
   const loadUserCollections = useCallback(async () => {
     try {
@@ -348,6 +405,7 @@ const useAcademyData = () => {
 
       await fetchClasses({ page: 1 });
       await loadUserCollections();
+      await Promise.all([loadResources(), loadPayments()]);
 
       const [zoomSummary, transactionsResponse] = await Promise.all([
         apiRequest(`/zoom-credits/${userId}/summary`).catch(() => null),
@@ -384,7 +442,7 @@ const useAcademyData = () => {
     } finally {
       setLoading(false);
     }
-  }, [academyName, fetchClasses, loadUserCollections, mapTransactionRecord, userId]);
+  }, [academyName, fetchClasses, loadPayments, loadResources, loadUserCollections, mapTransactionRecord, userId]);
 
   useEffect(() => {
     loadData();
@@ -475,13 +533,65 @@ const useAcademyData = () => {
           history: [transactionRecord, ...(prev.history ?? [])],
         }));
 
+        await loadPayments();
+
         return { success: true, transaction: transactionRecord };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unable to purchase credits.';
         return { success: false, error: message };
       }
     },
-    [mapTransactionRecord, userId],
+    [loadPayments, mapTransactionRecord, userId],
+  );
+
+  const uploadResource = useCallback(
+    async (payload) => {
+      try {
+        await apiRequest('/resources', {
+          method: 'POST',
+          body: payload,
+        });
+        await loadResources();
+        return { success: true };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to upload resource.';
+        return { success: false, error: message };
+      }
+    },
+    [loadResources],
+  );
+
+  const updateResource = useCallback(
+    async (resourceId, updates) => {
+      try {
+        await apiRequest(`/resources/${resourceId}`, {
+          method: 'PATCH',
+          body: updates,
+        });
+        await loadResources();
+        return { success: true };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to update resource.';
+        return { success: false, error: message };
+      }
+    },
+    [loadResources],
+  );
+
+  const deleteResource = useCallback(
+    async (resourceId) => {
+      try {
+        await apiRequest(`/resources/${resourceId}`, {
+          method: 'DELETE',
+        });
+        await loadResources();
+        return { success: true };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unable to delete resource.';
+        return { success: false, error: message };
+      }
+    },
+    [loadResources],
   );
 
   return {
@@ -505,16 +615,24 @@ const useAcademyData = () => {
     teachersSummary,
     studentsSummary,
     resources,
+    resourcesLoading,
     payments,
+    paymentsLoading,
     approvePendingUser,
     rejectPendingUser,
     purchaseCredits,
+    uploadResource,
+    updateResource,
+    deleteResource,
+    refreshResources: loadResources,
+    refreshPayments: loadPayments,
     setNotifications,
     setUnreadNotifications,
   };
 };
 
 export default useAcademyData;
+
 
 
 

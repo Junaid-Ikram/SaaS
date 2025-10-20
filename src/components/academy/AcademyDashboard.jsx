@@ -143,7 +143,13 @@ const AcademyDashboard = () => {
           setNotifications={setNotifications}
           setUnreadNotifications={setUnreadNotifications}
           payments={payments}
+          paymentsLoading={paymentsLoading}
           resources={resources}
+          resourcesLoading={resourcesLoading}
+          onUploadResource={uploadResource}
+          onUpdateResource={updateResource}
+          onDeleteResource={deleteResource}
+          onRefreshResources={refreshResources}
           activeSubTab={activeSubTab}
           setActiveSubTab={setActiveSubTab}
         />
@@ -155,6 +161,7 @@ const AcademyDashboard = () => {
 };
 
 export default AcademyDashboard;
+
 
 
 

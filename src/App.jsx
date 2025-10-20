@@ -15,6 +15,7 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
 const PricingPage = lazy(() => import('./pages/PricingPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const VerifyEmailPage = lazy(() => import('./pages/VerifyEmailPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const CookiePolicyPage = lazy(() => import('./pages/CookiePolicyPage'));
@@ -24,6 +25,26 @@ const AcademySubscription = lazy(() => import('./pages/AcademySubscription'));
 
 // Role-specific dashboards - these will be created later
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard').catch(() => ({ default: () => <div className="p-8">Super Admin Dashboard - Coming Soon</div> })));
+const SuperAdminAcademiesPage = lazy(() =>
+  import('./pages/super-admin/SuperAdminAcademiesPage').catch(() => ({
+    default: () => <div className="p-8">Academy Management - Coming Soon</div>,
+  })),
+);
+const SuperAdminUsersPage = lazy(() =>
+  import('./pages/super-admin/SuperAdminUsersPage').catch(() => ({
+    default: () => <div className="p-8">User Management - Coming Soon</div>,
+  })),
+);
+const SuperAdminPlatformSettingsPage = lazy(() =>
+  import('./pages/super-admin/SuperAdminPlatformSettingsPage').catch(() => ({
+    default: () => <div className="p-8">Platform Settings - Coming Soon</div>,
+  })),
+);
+const SuperAdminReportsPage = lazy(() =>
+  import('./pages/super-admin/SuperAdminReportsPage').catch(() => ({
+    default: () => <div className="p-8">Reports - Coming Soon</div>,
+  })),
+);
 const AcademyDashboard = lazy(() => import('./pages/AcademyDashboard').catch(() => ({ default: () => <div className="p-8">Academy Dashboard - Coming Soon</div> })));
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard').catch(() => ({ default: () => <div className="p-8">Teacher Dashboard - Coming Soon</div> })));
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard').catch(() => ({ default: () => <div className="p-8">Student Dashboard - Coming Soon</div> })));
@@ -93,6 +114,7 @@ const AppContent = () => {
             <Route path="/cookies" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <CookiePolicyPage />} />
             <Route path="/login" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <LoginPage />} />
             <Route path="/register" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <RegisterPage />} />
+            <Route path="/verify-email" element={user && !loading ? <Navigate to={userRole === 'super_admin' ? '/super-admin/dashboard' : userRole === 'academy_owner' ? '/academy/dashboard' : userRole === 'teacher' ? '/teacher/dashboard' : userRole === 'student' ? '/student/dashboard' : '/dashboard'} replace /> : <VerifyEmailPage />} />
             <Route path="/pending-approval" element={
               <PrivateRoute>
                 <PendingApprovalPage />
@@ -108,6 +130,26 @@ const AppContent = () => {
             <Route path="/super-admin/dashboard" element={
               <RoleBasedRoute requiredRole="super_admin">
                 <SuperAdminDashboard />
+              </RoleBasedRoute>
+            } />
+            <Route path="/super-admin/academies" element={
+              <RoleBasedRoute requiredRole="super_admin">
+                <SuperAdminAcademiesPage />
+              </RoleBasedRoute>
+            } />
+            <Route path="/super-admin/users" element={
+              <RoleBasedRoute requiredRole="super_admin">
+                <SuperAdminUsersPage />
+              </RoleBasedRoute>
+            } />
+            <Route path="/super-admin/platform-settings" element={
+              <RoleBasedRoute requiredRole="super_admin">
+                <SuperAdminPlatformSettingsPage />
+              </RoleBasedRoute>
+            } />
+            <Route path="/super-admin/reports" element={
+              <RoleBasedRoute requiredRole="super_admin">
+                <SuperAdminReportsPage />
               </RoleBasedRoute>
             } />
             

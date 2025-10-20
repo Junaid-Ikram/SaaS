@@ -34,7 +34,13 @@ const TabContent = ({
   setNotifications,
   setUnreadNotifications,
   payments,
+  paymentsLoading,
   resources,
+  resourcesLoading,
+  onUploadResource,
+  onUpdateResource,
+  onDeleteResource,
+  onRefreshResources,
   activeSubTab,
   setActiveSubTab,
 }) => {
@@ -74,7 +80,7 @@ const TabContent = ({
           />
         );
       case 'payments':
-        return <PaymentsTab key="payments" payments={payments} />;
+        return <PaymentsTab key="payments" payments={payments} loading={paymentsLoading} />;
       case 'zoom':
         return (
           <ZoomCreditsTab
@@ -98,7 +104,18 @@ const TabContent = ({
           />
         );
       case 'resources':
-        return <ResourcesTab key="resources" resources={resources} classes={classes} />;
+        return (
+          <ResourcesTab
+            key="resources"
+            resources={resources}
+            classes={classes}
+            loading={resourcesLoading}
+            onUploadResource={onUploadResource}
+            onUpdateResource={onUpdateResource}
+            onDeleteResource={onDeleteResource}
+            onRefreshResources={onRefreshResources}
+          />
+        );
       default:
         return null;
     }

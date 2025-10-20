@@ -10,7 +10,7 @@ import {
   FaCalendarAlt
 } from 'react-icons/fa';
 
-const PaymentsTab = ({ payments }) => {
+const PaymentsTab = ({ payments = [], loading = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -121,7 +121,9 @@ const PaymentsTab = ({ payments }) => {
 
         {/* Payments table */}
         <div className="overflow-x-auto">
-          {filteredPayments.length === 0 ? (
+          {loading ? (
+            <div className="py-10 text-center text-sm text-gray-500">Loading payments...</div>
+          ) : filteredPayments.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">No payments found</p>
             </div>
