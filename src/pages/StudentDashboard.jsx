@@ -1,6 +1,8 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import useStudentDashboardData from '../components/student/useStudentDashboardData';
+import useStudentResources from '../components/student/useStudentResources';
+import StudentResourcesTab from '../components/student/StudentResourcesTab';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -10,7 +12,14 @@ const formatDate = (value) => {
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('courses');
-  const { user, loading, error, classes, teachers, metrics, upcomingClasses, refresh } = useStudentDashboardData();
+  const { user, loading, error, classes, teachers, metrics, upcomingClasses, refresh } =
+    useStudentDashboardData();
+  const {
+    resources,
+    loading: resourcesLoading,
+    error: resourcesError,
+    refresh: refreshResources,
+  } = useStudentResources(classes, teachers);
 
   const nextClass = useMemo(() => upcomingClasses[0] ?? null, [upcomingClasses]);
 
@@ -188,7 +197,7 @@ const StudentDashboard = () => {
           {[
             { key: 'courses', label: 'My Classes' },
             { key: 'teachers', label: 'Teachers' },
-            { key: 'support', label: 'Support & Resources' },
+            { key: 'resources', label: 'Resources' },
             { key: 'profile', label: 'My Profile' },
           ].map((tab) => (
             <motion.button
@@ -213,8 +222,15 @@ const StudentDashboard = () => {
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
           {activeTab === 'courses' && renderCourses()}
           {activeTab === 'teachers' && renderTeachers()}
-          {activeTab === 'support' &&
-            renderPlaceholder('Support & Resources', 'Guides, recordings, and live help will appear here soon.')}
+          {activeTab === 'resources' && (
+            <StudentResourcesTab
+              resources={resources}
+              loading={resourcesLoading}
+              error={resourcesError}
+              onRefresh={refreshResources}
+              classes={classes}
+            />
+          )}
           {activeTab === 'profile' &&
             renderPlaceholder('My Profile', 'Profile management is on the roadmap for a future release.')}
         </motion.div>

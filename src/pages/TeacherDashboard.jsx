@@ -222,13 +222,19 @@ const TeacherDashboard = () => {
               metrics={metrics}
             />
           ) : null}
+          {activeTab === "resources" ? (
+            <TeacherResourcesTab
+              resources={resources}
+              loading={resourcesLoading}
+              error={resourcesError}
+              onRefresh={refreshResources}
+              onCreate={createResource}
+              onUpdate={updateResource}
+              onDelete={deleteResource}
+              classes={classes}
+            />
+          ) : null}
           {activeTab === "students" ? renderStudents() : null}
-          {activeTab === "materials"
-            ? renderPlaceholder(
-                "Teaching Materials",
-                "Resource management integrations are coming soon.",
-              )
-            : null}
           {activeTab === "profile"
             ? renderPlaceholder(
                 "My Profile",
