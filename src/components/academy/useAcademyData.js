@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import apiRequest from "../../utils/apiClient";
+import { mapResourceRecord } from "../../utils/resourceTransforms";
 
 const EMPTY_SUBSCRIPTION_USAGE = {
   studentLimit: 0,
@@ -122,40 +123,6 @@ const mapTransactionRecord = (record) => {
   };
 };
 
-const mapResourceRecord = (record) => ({
-  id: record.id,
-  title: record.title,
-  description: record.description ?? "",
-  type: record.fileType ?? "other",
-  mimeType: record.mimeType ?? "",
-  size: record.fileSize ?? 0,
-  classId: record.classId ?? null,
-  class: record.classTitle ?? (record.classId ? "Class Resource" : "General"),
-  uploaderId: record.uploaderId,
-  uploader: record.uploaderName ?? "Unknown",
-  downloadUrl: record.fileUrl,
-  fileKey: record.fileKey ?? null,
-  visibility: record.visibility ?? "ACADEMY",
-  uploadDate: record.createdAt ?? new Date().toISOString(),
-  metadata: record.metadata ?? null,
-});
-
-const mapPaymentRecord = (payment) => ({
-  id: payment.id,
-  description: payment.reference ?? payment.provider ?? "Payment",
-  student: payment.userName ?? "Unknown",
-  date: safeLocaleDate(payment.createdAt),
-  amount: Number(payment.amount ?? 0),
-  status: (payment.status ?? "").toLowerCase(),
-  type: payment.provider ?? "internal",
-  currency: payment.currency ?? "USD",
-});
-
-const buildDisplayName = (user) => {
-  const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
-  return name || user.email;
-};
-
 const useAcademyData = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -192,6 +159,7 @@ const useAcademyData = () => {
   const [pendingUsers, setPendingUsers] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
+  const teacherIdsRef = useRef(new Set());
   const [teachersSummary, setTeachersSummary] = useState(EMPTY_USER_SUMMARY);
   const [studentsSummary, setStudentsSummary] = useState(EMPTY_USER_SUMMARY);
   const [resources, setResources] = useState([]);
@@ -290,21 +258,6 @@ const useAcademyData = () => {
     [mapClassRecord],
   );
 
-  const loadResources = useCallback(async () => {
-    setResourcesLoading(true);
-    try {
-      const response = await apiRequest("/resources?limit=100&page=1");
-      const mapped = Array.isArray(response?.data)
-        ? response.data.map(mapResourceRecord)
-        : [];
-      setResources(mapped);
-    } catch (error) {
-      console.error("Failed to load resources", error);
-    } finally {
-      setResourcesLoading(false);
-    }
-  }, []);
-
   const loadPayments = useCallback(async () => {
     setPaymentsLoading(true);
     try {
@@ -319,6 +272,39 @@ const useAcademyData = () => {
       setPaymentsLoading(false);
     }
   }, []);
+
+  const loadResources = useCallback(async () => {
+    setResourcesLoading(true);
+    try {
+      const response = await apiRequest('/resources?limit=100&page=1');
+      const rawResources = Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response)
+          ? response
+          : [];
+      const mapped = rawResources.map(mapResourceRecord);
+      const allowedUploaderIds = new Set(teacherIdsRef.current);
+      if (userId) {
+        allowedUploaderIds.add(userId);
+      }
+      const filtered = mapped.filter((resource) =>
+        allowedUploaderIds.has(resource.uploaderId ?? '') || resource.visibility === 'PUBLIC',
+      );
+      setResources(filtered);
+    } catch (error) {
+      console.error('Failed to load resources', error);
+      showToast({
+        status: 'error',
+        title: 'Unable to load resources',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred while fetching resources.',
+      });
+    } finally {
+      setResourcesLoading(false);
+    }
+  }, [showToast, userId]);
 
   const loadUserCollections = useCallback(async () => {
     try {
@@ -342,6 +328,8 @@ const useAcademyData = () => {
       const mappedTeachers = Array.isArray(teachersApprovedResponse?.data)
         ? teachersApprovedResponse.data.map(mapTeacherRecord)
         : [];
+
+      teacherIdsRef.current = new Set(mappedTeachers.map((teacher) => teacher.id));
       const mappedStudents = Array.isArray(studentsApprovedResponse?.data)
         ? studentsApprovedResponse.data.map(mapStudentRecord)
         : [];
@@ -770,3 +758,6 @@ const useAcademyData = () => {
 };
 
 export default useAcademyData;
+
+
+

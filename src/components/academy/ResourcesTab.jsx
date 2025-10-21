@@ -67,7 +67,11 @@ const ResourcesTab = ({
   onUpdateResource,
   onDeleteResource,
   onRefreshResources,
+  canManage = true,
 }) => {
+  const canCreate = canManage && typeof onUploadResource === "function";
+  const canModify = canManage && typeof onUpdateResource === "function";
+  const canRemove = canManage && typeof onDeleteResource === "function";
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ type: 'all', class: 'all', uploader: 'all' });
   const [showFormModal, setShowFormModal] = useState(false);
@@ -76,6 +80,7 @@ const ResourcesTab = ({
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [actionError, setActionError] = useState(null);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const uniqueTypes = useMemo(
@@ -105,6 +110,9 @@ const ResourcesTab = ({
   const totalSize = filteredResources.reduce((sum, resource) => sum + (resource.size ?? 0), 0);
 
   const handleOpenCreateModal = () => {
+    if (!canCreate) {
+      return;
+    }
     setEditingResource(null);
     setFormValues(DEFAULT_FORM);
     setModalError(null);
@@ -112,6 +120,9 @@ const ResourcesTab = ({
   };
 
   const handleOpenEditModal = (resource) => {
+    if (!canModify) {
+      return;
+    }
     setEditingResource(resource);
     setFormValues({
       title: resource.title ?? '',
@@ -135,7 +146,11 @@ const ResourcesTab = ({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!onUploadResource && !onUpdateResource) {
+    if (editingResource) {
+      if (!canModify || typeof onUpdateResource !== "function") {
+        return;
+      }
+    } else if (!canCreate || typeof onUploadResource !== "function") {
       return;
     }
     setSubmitting(true);
@@ -178,7 +193,7 @@ const ResourcesTab = ({
   };
 
   const handleDelete = async (resource) => {
-    if (!onDeleteResource) {
+    if (!canRemove || typeof onDeleteResource !== "function") {
       return;
     }
     setActionLoadingId(resource.id);
@@ -219,18 +234,22 @@ const ResourcesTab = ({
           <div>
             <h3 className="text-xl font-semibold text-gray-900">Resources Library</h3>
             <p className="text-sm text-gray-500">
-              Upload, curate, and distribute materials across your academy.
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleOpenCreateModal}
-              className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              <FaPlus className="mr-2" /> Upload Resource
-            </button>
-            <button
+            {canCreate ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <FaPlus className="mr-2" /> Upload Resource
+              </button>
+            ) : null}
+<button
               type="button"
               onClick={onRefreshResources}
               className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600"
@@ -242,19 +261,35 @@ const ResourcesTab = ({
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm text-gray-500">Total Resources</p>
+            <p className="text-sm text-gray-500">
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
+            </p>
             <p className="mt-2 text-2xl font-semibold text-gray-900">{resources.length}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm text-gray-500">Total Storage</p>
+            <p className="text-sm text-gray-500">
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
+            </p>
             <p className="mt-2 text-2xl font-semibold text-gray-900">{formatFileSize(totalSize)}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm text-gray-500">Unique Classes</p>
+            <p className="text-sm text-gray-500">
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
+            </p>
             <p className="mt-2 text-2xl font-semibold text-gray-900">{uniqueClasses.length}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm text-gray-500">Contributors</p>
+            <p className="text-sm text-gray-500">
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
+            </p>
             <p className="mt-2 text-2xl font-semibold text-gray-900">{uniqueUploaders.length}</p>
           </div>
         </div>
@@ -311,29 +346,28 @@ const ResourcesTab = ({
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchTerm('');
-                setFilters({ type: 'all', class: 'all', uploader: 'all' });
-              }}
-              className="inline-flex items-center rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600"
-            >
-              <FaFilter className="mr-2" /> Clear
-            </button>
-          </div>
+            {canCreate ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <FaPlus className="mr-2" /> Upload Resource
+              </button>
+            ) : null}
+</div>
         </div>
 
-        {feedback && (
+        {canManage && feedback ? (
           <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
             {feedback}
           </div>
-        )}
-        {actionError && (
+        ) : null}
+        {canManage && actionError ? (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {actionError}
           </div>
-        )}
+        ) : null}
 
         <div className="mt-6">
           {loading ? (
@@ -374,14 +408,16 @@ const ResourcesTab = ({
                   </div>
                   <div className="mt-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleDownload(resource)}
-                        className="inline-flex items-center rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:border-blue-500 hover:text-blue-600"
-                      >
-                        <FaDownload className="mr-1" /> Download
-                      </button>
-                      <button
+                      {canCreate ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <FaPlus className="mr-2" /> Upload Resource
+              </button>
+            ) : null}
+<button
                         type="button"
                         onClick={() => handleOpenEditModal(resource)}
                         className="inline-flex items-center rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:border-blue-500 hover:text-blue-600"
@@ -389,16 +425,16 @@ const ResourcesTab = ({
                         <FaEdit className="mr-1" /> Edit
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(resource)}
-                      disabled={actionLoadingId === resource.id}
-                      className="inline-flex items-center rounded-md border border-red-200 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <FaTrash className="mr-1" />
-                      {actionLoadingId === resource.id ? 'Removing...' : 'Remove'}
-                    </button>
-                  </div>
+                    {canCreate ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <FaPlus className="mr-2" /> Upload Resource
+              </button>
+            ) : null}
+</div>
                 </div>
               ))}
             </div>
@@ -414,9 +450,10 @@ const ResourcesTab = ({
                 {editingResource ? 'Update Resource' : 'Upload New Resource'}
               </h3>
               <p className="text-sm text-gray-500">
-                Provide metadata for the file. Uploads should already be stored in your CDN/storage
-                bucket.
-              </p>
+              {canManage
+                ? "Upload, curate, and distribute materials across your academy."
+                : "Browse materials shared by your teachers."}
+            </p>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 px-6 py-4">
@@ -574,18 +611,16 @@ const ResourcesTab = ({
                 </div>
               </div>
               <div className="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowFormModal(false);
-                    setEditingResource(null);
-                    setFormValues(DEFAULT_FORM);
-                  }}
-                  className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
+                {canCreate ? (
+              <button
+                type="button"
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
+                <FaPlus className="mr-2" /> Upload Resource
+              </button>
+            ) : null}
+<button
                   type="submit"
                   disabled={submitting}
                   className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
@@ -602,3 +637,10 @@ const ResourcesTab = ({
 };
 
 export default ResourcesTab;
+
+
+
+
+
+
+

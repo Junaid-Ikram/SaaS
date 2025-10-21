@@ -1,14 +1,15 @@
-﻿import React from 'react';
-import { AnimatePresence } from 'framer-motion';
+import React from "react";
+import { AnimatePresence } from "framer-motion";
 
 // Import tab components
-import OverviewTab from './OverviewTab';
-import UsersTab from './UsersTab';
-import NotificationsTab from './NotificationsTab';
-import PaymentsTab from './PaymentsTab';
-import ZoomCreditsTab from './ZoomCreditsTab';
-import ClassesTab from './ClassesTab';
-import ResourcesTab from './ResourcesTab';
+import OverviewTab from "./OverviewTab";
+import UsersTab from "./UsersTab";
+import NotificationsTab from "./NotificationsTab";
+import PaymentsTab from "./PaymentsTab";
+import ZoomCreditsTab from "./ZoomCreditsTab";
+import ClassesTab from "./ClassesTab";
+import ResourcesTab from "./ResourcesTab";
+import AcademySettingsTab from "./AcademySettingsTab";
 
 const TabContent = ({
   activeTab,
@@ -43,12 +44,18 @@ const TabContent = ({
   onRefreshResources,
   activeSubTab,
   setActiveSubTab,
-  requestedUsersTab = 'teachers',
+  academySettings,
+  academySettingsLoading,
+  academySettingsSaving,
+  academySettingsError,
+  onRefreshAcademySettings,
+  onUpdateAcademySettings,
+  requestedUsersTab = "teachers",
   onNavigateTab = () => {},
 }) => {
   const renderActiveTab = () => {
     switch (activeTab) {
-      case 'overview':
+      case "overview":
         return (
           <OverviewTab
             key="overview"
@@ -58,10 +65,10 @@ const TabContent = ({
             zoomCredits={zoomCredits}
             subscriptionUsage={subscriptionUsage}
             onNavigate={onNavigateTab}
-            onShowPurchaseCredits={() => onNavigateTab('zoom')}
+            onShowPurchaseCredits={() => onNavigateTab("zoom")}
           />
         );
-      case 'users':
+      case "users":
         return (
           <UsersTab
             key="users"
@@ -75,7 +82,7 @@ const TabContent = ({
             initialSubTab={requestedUsersTab}
           />
         );
-      case 'notifications':
+      case "notifications":
         return (
           <NotificationsTab
             key="notifications"
@@ -84,9 +91,15 @@ const TabContent = ({
             setUnreadNotifications={setUnreadNotifications}
           />
         );
-      case 'payments':
-        return <PaymentsTab key="payments" payments={payments} loading={paymentsLoading} />;
-      case 'zoom':
+      case "payments":
+        return (
+          <PaymentsTab
+            key="payments"
+            payments={payments}
+            loading={paymentsLoading}
+          />
+        );
+      case "zoom":
         return (
           <ZoomCreditsTab
             key="zoom"
@@ -94,7 +107,7 @@ const TabContent = ({
             onPurchaseCredits={onPurchaseCredits}
           />
         );
-      case 'classes':
+      case "classes":
         return (
           <ClassesTab
             key="classes"
@@ -108,7 +121,19 @@ const TabContent = ({
             setActiveSubTab={setActiveSubTab}
           />
         );
-      case 'resources':
+      case "settings":
+        return (
+          <AcademySettingsTab
+            key="settings"
+            settings={academySettings}
+            loading={academySettingsLoading}
+            saving={academySettingsSaving}
+            error={academySettingsError}
+            onRefresh={onRefreshAcademySettings}
+            onSubmit={onUpdateAcademySettings}
+          />
+        );
+      case "resources":
         return (
           <ResourcesTab
             key="resources"

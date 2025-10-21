@@ -1,0 +1,17 @@
+export const mapResourceRecord = (record) => ({
+  id: record.id,
+  title: record.title,
+  description: record.description ?? '',
+  type: record.fileType ?? 'other',
+  mimeType: record.mimeType ?? '',
+  size: record.fileSize ?? 0,
+  classId: record.classId ?? null,
+  class: record.classTitle ?? (record.classId ? 'Class Resource' : 'General'),
+  uploaderId: record.uploaderId ?? null,
+  uploader: record.uploaderName ?? 'Unknown',
+  downloadUrl: record.fileUrl,
+  fileKey: record.fileKey ?? null,
+  visibility: record.visibility ?? 'ACADEMY',
+  uploadDate: record.createdAt ?? new Date().toISOString(),
+  metadata: record.metadata ?? null,
+});

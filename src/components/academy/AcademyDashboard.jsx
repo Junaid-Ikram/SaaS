@@ -1,42 +1,41 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 // Import custom hooks
-import useWindowSize from './useWindowSize';
-import useAcademyData from './useAcademyData';
+import useWindowSize from "./useWindowSize";
+import useAcademyData from "./useAcademyData";
+import useAcademySettings from "./useAcademySettings";
 
 // Import components
-import Sidebar from './Sidebar';
-import DashboardHeader from './DashboardHeader';
-import TabContent from './TabContent';
+import Sidebar from "./Sidebar";
+import DashboardHeader from "./DashboardHeader";
+import TabContent from "./TabContent";
 
 // Import animation variants
-import { contentVariants } from './animationVariants';
+import { contentVariants } from "./animationVariants";
 
 const AcademyDashboard = () => {
   // State for UI
-  const [activeTab, setActiveTab] = useState('overview');
-  const [activeSubTab, setActiveSubTab] = useState('upcoming');
+  const [activeTab, setActiveTab] = useState("overview");
+  const [activeSubTab, setActiveSubTab] = useState("upcoming");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [requestedUsersTab, setRequestedUsersTab] = useState('teachers');
+  const [requestedUsersTab, setRequestedUsersTab] = useState("teachers");
   const { isMobile } = useWindowSize();
-
-
 
   useEffect(() => {
     setSidebarCollapsed(isMobile);
   }, [isMobile]);
 
   const navigateToTab = (tab, options = {}) => {
-    if (typeof tab === 'string') {
+    if (typeof tab === "string") {
       setActiveTab(tab);
     }
 
     if (options?.subTab) {
-      if (tab === 'classes') {
+      if (tab === "classes") {
         setActiveSubTab(options.subTab);
       }
-      if (tab === 'users') {
+      if (tab === "users") {
         setRequestedUsersTab(options.subTab);
       }
     }
@@ -44,8 +43,8 @@ const AcademyDashboard = () => {
 
   // Load academy dashboard data
   const {
-    loading,
-    error,
+    loading: dashboardLoading,
+    error: dashboardError,
     refresh,
     academyData,
     zoomCredits,
@@ -77,6 +76,14 @@ const AcademyDashboard = () => {
     setNotifications,
     setUnreadNotifications,
   } = useAcademyData();
+  const {
+    settings: academySettings,
+    loading: academySettingsLoading,
+    saving: academySettingsSaving,
+    error: academySettingsError,
+    refresh: refreshAcademySettings,
+    update: updateAcademySettings,
+  } = useAcademySettings();
 
   // Derived data
   const teacherCount = teachersSummary?.approved ?? teachers.length;
@@ -85,17 +92,19 @@ const AcademyDashboard = () => {
   // Determine content variant based on sidebar state and mobile view
   const getContentVariant = () => {
     if (isMobile) {
-      return 'full';
+      return "full";
     }
-    return sidebarCollapsed ? 'mini' : 'open';
+    return sidebarCollapsed ? "mini" : "open";
   };
 
-  if (loading) {
+  if (dashboardLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">Loading academy dashboard...</p>
+          <p className="mt-4 text-lg text-gray-600">
+            Loading academy dashboard...
+          </p>
         </div>
       </div>
     );
@@ -113,20 +122,20 @@ const AcademyDashboard = () => {
         isMobile={isMobile}
         unreadNotifications={unreadNotifications}
       />
-      
+
       {/* Main content */}
-      <motion.main 
+      <motion.main
         className="min-h-screen px-4 pb-10 pt-6 transition-all duration-300 overflow-x-hidden sm:px-6 lg:px-8"
         variants={contentVariants}
         animate={getContentVariant()}
-        initial={isMobile ? 'full' : 'open'}
+        initial={isMobile ? "full" : "open"}
       >
         {/* Dashboard header */}
         <DashboardHeader academyData={academyData} />
-        {error && (
+        {dashboardError && (
           <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <span>{error}</span>
+              <span>{dashboardError}</span>
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-red-700 underline underline-offset-2 hover:text-red-800"
@@ -137,10 +146,9 @@ const AcademyDashboard = () => {
             </div>
           </div>
         )}
-        
-        
+
         {/* Tab content */}
-        <TabContent 
+        <TabContent
           activeTab={activeTab}
           teacherCount={teacherCount}
           studentCount={studentCount}
@@ -173,6 +181,12 @@ const AcademyDashboard = () => {
           onUpdateResource={updateResource}
           onDeleteResource={deleteResource}
           onRefreshResources={refreshResources}
+          academySettings={academySettings}
+          academySettingsLoading={academySettingsLoading}
+          academySettingsSaving={academySettingsSaving}
+          academySettingsError={academySettingsError}
+          onRefreshAcademySettings={refreshAcademySettings}
+          onUpdateAcademySettings={updateAcademySettings}
           activeSubTab={activeSubTab}
           setActiveSubTab={setActiveSubTab}
         />
@@ -184,16 +198,3 @@ const AcademyDashboard = () => {
 };
 
 export default AcademyDashboard;
-
-
-
-
-
-
-
-
-
-
-
-
-
