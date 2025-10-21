@@ -4,20 +4,6 @@ import apiRequest from "../../utils/apiClient";
 
 const SETTINGS_METADATA = [
   {
-    key: "allowTeacherSelfRegistration",
-    label: "Allow teacher self-registration",
-    description:
-      "Let prospective teachers create their own accounts to await approval.",
-    type: "boolean",
-  },
-  {
-    key: "autoApproveStudents",
-    label: "Auto approve students",
-    description:
-      "Automatically activate new student accounts without manual review.",
-    type: "boolean",
-  },
-  {
     key: "sessionTimeoutMinutes",
     label: "Session timeout (minutes)",
     description:
