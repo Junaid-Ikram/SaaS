@@ -33,7 +33,7 @@ const normaliseClass = (record) => ({
 });
 
 const useTeacherDashboardData = () => {
-  const { user } = useAuth();
+  const { user, academyMemberships, loadingAcademies } = useAuth();
   const { showToast } = useToast();
   const userId = user?.id ?? null;
 
@@ -43,6 +43,38 @@ const useTeacherDashboardData = () => {
   const [classesMeta, setClassesMeta] = useState(null);
   const [students, setStudents] = useState([]);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [selectedAcademyId, setSelectedAcademyId] = useState(null);
+
+  useEffect(() => {
+    if (!Array.isArray(academyMemberships) || academyMemberships.length === 0) {
+      setSelectedAcademyId(null);
+      return;
+    }
+
+    setSelectedAcademyId((prev) => {
+      if (prev && academyMemberships.some((membership) => membership.academyId === prev)) {
+        return prev;
+      }
+      return academyMemberships[0]?.academyId ?? null;
+    });
+  }, [academyMemberships]);
+
+  const activeAcademyId = useMemo(
+    () => selectedAcademyId ?? academyMemberships?.[0]?.academyId ?? null,
+    [academyMemberships, selectedAcademyId],
+  );
+
+  const academyOptions = useMemo(
+    () =>
+      (academyMemberships ?? []).map((membership) => ({
+        value: membership.academyId,
+        label: membership.academy?.name ?? "Unnamed Academy",
+        status: membership.status,
+      })),
+    [academyMemberships],
+  );
+
+  const hasAcademyAccess = Boolean(activeAcademyId);
 
   const metrics = useMemo(() => {
     const upcoming = classes.filter((cls) => cls.status === "upcoming");
@@ -62,6 +94,15 @@ const useTeacherDashboardData = () => {
       return;
     }
 
+    if (!Array.isArray(academyMemberships) || academyMemberships.length === 0) {
+      setClasses([]);
+      setClassesMeta(null);
+      setStudents([]);
+      setLoading(false);
+      return;
+    }
+
+
     setLoading(true);
     setError(null);
 
@@ -71,6 +112,10 @@ const useTeacherDashboardData = () => {
         limit: "100",
         teacherId: userId,
       });
+
+      if (activeAcademyId) {
+        params.append("academyId", activeAcademyId);
+      }
 
       if (filters.status && filters.status !== "all") {
         params.append("status", filters.status.toUpperCase());
@@ -85,9 +130,18 @@ const useTeacherDashboardData = () => {
         params.append("to", filters.to);
       }
 
+      const studentParams = new URLSearchParams({
+        limit: "100",
+        page: "1",
+        status: "APPROVED",
+      });
+      if (activeAcademyId) {
+        studentParams.append("academyId", activeAcademyId);
+      }
+
       const [classesResponse, studentsResponse] = await Promise.all([
         apiRequest(`/classes?${params.toString()}`),
-        apiRequest("/users/students?limit=100&page=1&status=APPROVED"),
+        apiRequest(`/users/students?${studentParams.toString()}`),
       ]);
 
       const mappedClasses = (classesResponse?.data ?? []).map(normaliseClass);
@@ -116,7 +170,7 @@ const useTeacherDashboardData = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, showToast, userId]);
+  }, [academyMemberships, activeAcademyId, filters, showToast, userId]);
 
   useEffect(() => {
     load();
@@ -137,12 +191,23 @@ const useTeacherDashboardData = () => {
           error: "Unable to determine teacher identity.",
         };
       }
+
+      if (!activeAcademyId) {
+        const message = "Join an academy before scheduling classes.";
+        showToast({
+          status: "error",
+          title: "No academy selected",
+          description: message,
+        });
+        return { success: false, error: message };
+      }
       try {
         await apiRequest("/classes", {
           method: "POST",
           body: {
             ...payload,
             teacherId: userId,
+            academyId: activeAcademyId,
           },
         });
         showToast({
@@ -163,7 +228,7 @@ const useTeacherDashboardData = () => {
         return { success: false, error: message };
       }
     },
-    [load, showToast, userId],
+    [activeAcademyId, load, showToast, userId],
   );
 
   const updateClass = useCallback(
@@ -223,6 +288,7 @@ const useTeacherDashboardData = () => {
 
   return {
     loading,
+    loadingAcademies,
     error,
     classes,
     classesMeta,
@@ -234,6 +300,11 @@ const useTeacherDashboardData = () => {
     createClass,
     updateClass,
     deleteClass,
+    academyOptions,
+    activeAcademyId,
+    setActiveAcademyId: setSelectedAcademyId,
+    academyMemberships,
+    hasAcademyAccess,
   };
 };
 

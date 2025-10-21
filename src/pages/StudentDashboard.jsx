@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import useStudentDashboardData from '../components/student/useStudentDashboardData';
 import useStudentResources from '../components/student/useStudentResources';
 import StudentResourcesTab from '../components/student/StudentResourcesTab';
+import AcademyDirectory from '../components/academy/AcademyDirectory';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -12,16 +13,29 @@ const formatDate = (value) => {
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('courses');
-  const { user, loading, error, classes, teachers, metrics, upcomingClasses, refresh } =
-    useStudentDashboardData();
+  const {
+    user,
+    loading,
+    error,
+    classes,
+    teachers,
+    metrics,
+    upcomingClasses,
+    refresh,
+    hasAcademyAccess,
+    loadingAcademies,
+    activeAcademyId,
+  } = useStudentDashboardData();
   const {
     resources,
     loading: resourcesLoading,
     error: resourcesError,
     refresh: refreshResources,
-  } = useStudentResources(classes, teachers);
+  } = useStudentResources(classes, teachers, activeAcademyId);
 
   const nextClass = useMemo(() => upcomingClasses[0] ?? null, [upcomingClasses]);
+
+  const isBusy = loading || loadingAcademies;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -184,13 +198,20 @@ const StudentDashboard = () => {
     <div className="container mx-auto px-4 py-8 space-y-6">
       <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
         <h1 className="text-3xl font-bold text-emerald-700">Student Dashboard</h1>
-        <p className="text-gray-600">Hello{user?.firstName ? `, ${user.firstName}` : ''}! Here’s what’s happening in your classes.</p>
+        <p className="text-gray-600">Hello{user?.firstName ? `, ${user.firstName}` : ''}! Here's what's happening in your classes.</p>
         {nextClass && (
           <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-lg p-4 text-sm text-emerald-900">
-            <span className="font-semibold">Next class:</span> {nextClass.title} with {nextClass.teacher} · {formatDate(nextClass.start)}
+            <span className="font-semibold">Next class:</span> {nextClass.title} with {nextClass.teacher} � {formatDate(nextClass.start)}
           </div>
         )}
       </motion.div>
+
+      {!hasAcademyAccess && !loadingAcademies ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">You're not currently enrolled in an academy.</p>
+          <p className="mt-1">Browse the academy directory to request access and unlock your classes and resources.</p>
+        </div>
+      ) : null}
 
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
@@ -198,6 +219,7 @@ const StudentDashboard = () => {
             { key: 'courses', label: 'My Classes' },
             { key: 'teachers', label: 'Teachers' },
             { key: 'resources', label: 'Resources' },
+            { key: 'academies', label: 'Academies' },
             { key: 'profile', label: 'My Profile' },
           ].map((tab) => (
             <motion.button
@@ -215,10 +237,10 @@ const StudentDashboard = () => {
         </nav>
       </div>
 
-      {loading && renderLoading()}
-      {!loading && error && renderError()}
+      {isBusy && renderLoading()}
+      {!isBusy && error && renderError()}
 
-      {!loading && !error && (
+      {!isBusy && !error && (
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
           {activeTab === 'courses' && renderCourses()}
           {activeTab === 'teachers' && renderTeachers()}
@@ -229,8 +251,11 @@ const StudentDashboard = () => {
               error={resourcesError}
               onRefresh={refreshResources}
               classes={classes}
+              hasAcademyAccess={hasAcademyAccess}
+              loadingAcademies={loadingAcademies}
             />
           )}
+          {activeTab === 'academies' && <AcademyDirectory />}
           {activeTab === 'profile' &&
             renderPlaceholder('My Profile', 'Profile management is on the roadmap for a future release.')}
         </motion.div>

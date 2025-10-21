@@ -4,7 +4,7 @@ import { useToast } from "../../contexts/ToastContext";
 import apiRequest from "../../utils/apiClient";
 import { mapResourceRecord } from "../../utils/resourceTransforms";
 
-const useStudentResources = (classes = [], teachers = []) => {
+const useStudentResources = (classes = [], teachers = [], academyId = null) => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const userId = user?.id ?? null;
@@ -29,11 +29,18 @@ const useStudentResources = (classes = [], teachers = []) => {
       return;
     }
 
+    if (!academyId) {
+      setResources([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await apiRequest("/resources?limit=100&page=1");
+      const params = new URLSearchParams({ limit: "100", page: "1", academyId });
+      const response = await apiRequest(`/resources?${params.toString()}`);
       const rawResources = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
@@ -69,7 +76,7 @@ const useStudentResources = (classes = [], teachers = []) => {
     } finally {
       setLoading(false);
     }
-  }, [classIds, teacherIds, showToast, userId]);
+  }, [academyId, classIds, teacherIds, showToast, userId]);
 
   useEffect(() => {
     loadResources();

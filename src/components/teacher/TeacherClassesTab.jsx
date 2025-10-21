@@ -57,12 +57,19 @@ const TeacherClassesTab = ({
   meta,
   onRefresh,
   metrics,
+  academyOptions = [],
+  activeAcademyId,
+  onSelectAcademy,
+  hasAcademyAccess,
+  loadingAcademies = false
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
   const [showFormModal, setShowFormModal] = useState(false);
   const [formValues, setFormValues] = useState(DEFAULT_FORM);
   const [editingClass, setEditingClass] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const canSchedule = hasAcademyAccess && !loadingAcademies;
 
   useEffect(() => {
     setLocalFilters(filters);
@@ -83,6 +90,10 @@ const TeacherClassesTab = ({
   };
 
   const openCreateModal = () => {
+    if (!canSchedule) {
+      return;
+    }
+
     setEditingClass(null);
     setFormValues({
       ...DEFAULT_FORM,
@@ -226,7 +237,8 @@ const TeacherClassesTab = ({
           <button
             type="button"
             onClick={openCreateModal}
-            className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+            disabled={!canSchedule}
+            className="inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <FaPlus className="mr-2" /> Schedule class
           </button>
@@ -256,6 +268,22 @@ const TeacherClassesTab = ({
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <select
+            value={activeAcademyId ?? ""}
+            onChange={(event) => onSelectAcademy?.(event.target.value || null)}
+            disabled={loadingAcademies || academyOptions.length === 0}
+            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          >
+            {academyOptions.length === 0 ? (
+              <option value="">No academies available</option>
+            ) : (
+              academyOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            )}
+          </select>
           <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
             <FaSearch className="mr-2 text-gray-400" />
             <input
@@ -309,16 +337,21 @@ const TeacherClassesTab = ({
           >
             Reset
           </button>
-          {meta ? (
-            <span className="ml-auto text-xs text-gray-500">
-              Showing {meta.count ?? classes.length} of{" "}
-              {meta.total ?? classes.length}
-            </span>
-          ) : null}
-        </div>
+        {meta ? (
+          <span className="ml-auto text-xs text-gray-500">
+            Showing {meta.count ?? classes.length} of{" "}
+            {meta.total ?? classes.length}
+          </span>
+        ) : null}
       </div>
+      {!hasAcademyAccess && !loadingAcademies ? (
+        <p className="mt-3 text-xs text-amber-700">
+          Join an academy to enable class scheduling and roster access.
+        </p>
+      ) : null}
+    </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">

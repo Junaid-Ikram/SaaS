@@ -16,6 +16,7 @@ const TeacherDashboard = () => {
   const [activeTab, setActiveTab] = useState("classes");
   const {
     loading,
+    loadingAcademies,
     error,
     classes,
     classesMeta,
@@ -27,6 +28,11 @@ const TeacherDashboard = () => {
     createClass,
     updateClass,
     deleteClass,
+    academyOptions,
+    activeAcademyId,
+    setActiveAcademyId,
+    academyMemberships,
+    hasAcademyAccess,
   } = useTeacherDashboardData();
   const {
     resources,
@@ -36,7 +42,7 @@ const TeacherDashboard = () => {
     createResource,
     updateResource,
     deleteResource,
-  } = useTeacherResources(classes);
+  } = useTeacherResources(classes, activeAcademyId);
 
   const upcomingClass = useMemo(() => {
     if (!classes.length) return null;
@@ -45,6 +51,8 @@ const TeacherDashboard = () => {
       .sort((a, b) => new Date(a.scheduledStart) - new Date(b.scheduledStart));
     return upcoming[0] ?? classes[0];
   }, [classes]);
+
+  const isBusy = loading || loadingAcademies;
 
   const renderLoading = () => (
     <div className="flex min-h-[50vh] flex-col items-center justify-center text-gray-500">
@@ -179,6 +187,7 @@ const TeacherDashboard = () => {
             { key: "classes", label: "My Classes" },
             { key: "students", label: "Students" },
             { key: "resources", label: "Resources" },
+            { key: "academies", label: "Academies" },
             { key: "profile", label: "My Profile" },
           ].map((tab) => (
             <motion.button
@@ -198,10 +207,17 @@ const TeacherDashboard = () => {
         </nav>
       </div>
 
-      {loading && renderLoading()}
-      {!loading && error && renderError()}
+      {isBusy && renderLoading()}
+      {!isBusy && error && renderError()}
 
-      {!loading && !error && (
+      {!loading && !loadingAcademies && !hasAcademyAccess ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-medium">You are not currently associated with an academy.</p>
+          <p className="mt-1 text-amber-800">Join an academy from the directory to schedule classes and upload resources.</p>
+        </div>
+      ) : null}
+
+      {!isBusy && !error && (
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -220,7 +236,12 @@ const TeacherDashboard = () => {
               meta={classesMeta}
               onRefresh={refresh}
               metrics={metrics}
-            />
+              academyOptions={academyOptions}
+              activeAcademyId={activeAcademyId}
+              onSelectAcademy={setActiveAcademyId}
+              hasAcademyAccess={hasAcademyAccess}
+              loadingAcademies={loadingAcademies}
+              />
           ) : null}
           {activeTab === "resources" ? (
             <TeacherResourcesTab
@@ -232,6 +253,8 @@ const TeacherDashboard = () => {
               onUpdate={updateResource}
               onDelete={deleteResource}
               classes={classes}
+              hasAcademyAccess={hasAcademyAccess}
+              loadingAcademies={loadingAcademies}
             />
           ) : null}
           {activeTab === "students" ? renderStudents() : null}

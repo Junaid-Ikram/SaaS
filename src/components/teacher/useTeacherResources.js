@@ -4,7 +4,7 @@ import { useToast } from "../../contexts/ToastContext";
 import apiRequest from "../../utils/apiClient";
 import { mapResourceRecord } from "../../utils/resourceTransforms";
 
-const useTeacherResources = (classes = []) => {
+const useTeacherResources = (classes = [], academyId = null) => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const userId = user?.id ?? null;
@@ -24,10 +24,17 @@ const useTeacherResources = (classes = []) => {
       return;
     }
 
+    if (!academyId) {
+      setResources([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const response = await apiRequest("/resources?limit=100&page=1");
+      const params = new URLSearchParams({ limit: "100", page: "1", academyId });
+      const response = await apiRequest(`/resources?${params.toString()}`);
       const rawResources = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
@@ -59,7 +66,7 @@ const useTeacherResources = (classes = []) => {
     } finally {
       setLoading(false);
     }
-  }, [classIds, showToast, userId]);
+  }, [academyId, classIds, showToast, userId]);
 
   useEffect(() => {
     loadResources();
@@ -67,10 +74,20 @@ const useTeacherResources = (classes = []) => {
 
   const createResource = useCallback(
     async (payload) => {
+      if (!academyId) {
+        const message = "Join an academy before uploading resources.";
+        showToast({
+          status: "error",
+          title: "No academy selected",
+          description: message,
+        });
+        return { success: false, error: message };
+      }
       try {
+        const requestBody = { ...payload, academyId: payload.academyId ?? academyId };
         await apiRequest("/resources", {
           method: "POST",
-          body: payload,
+          body: requestBody,
         });
         showToast({
           status: "success",
@@ -90,15 +107,19 @@ const useTeacherResources = (classes = []) => {
         return { success: false, error: message };
       }
     },
-    [loadResources, showToast],
+    [academyId, loadResources, showToast],
   );
 
   const updateResource = useCallback(
     async (resourceId, updates) => {
+      if (!academyId) {
+        return { success: false, error: "No academy selected." };
+      }
       try {
+        const requestBody = { ...updates, academyId: updates.academyId ?? academyId };
         await apiRequest(`/resources/${resourceId}`, {
           method: "PATCH",
-          body: updates,
+          body: requestBody,
         });
         showToast({
           status: "success",
@@ -118,7 +139,7 @@ const useTeacherResources = (classes = []) => {
         return { success: false, error: message };
       }
     },
-    [loadResources, showToast],
+    [academyId, loadResources, showToast],
   );
 
   const deleteResource = useCallback(
@@ -145,7 +166,7 @@ const useTeacherResources = (classes = []) => {
         return { success: false, error: message };
       }
     },
-    [loadResources, showToast],
+    [academyId, loadResources, showToast],
   );
 
   return {

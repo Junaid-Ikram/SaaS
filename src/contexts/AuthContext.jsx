@@ -24,11 +24,20 @@ const buildUserDetails = (user) => {
   };
 };
 
-const mapRegistrationPayload = ({ email, password, fullName, contactNumber, role }) => {
+const mapRegistrationPayload = ({
+  email,
+  password,
+  fullName,
+  contactNumber,
+  role,
+  academyName,
+  academyDescription,
+  academyId,
+}) => {
   const [firstName, ...rest] = (fullName ?? '').trim().split(/\s+/);
   const lastName = rest.length > 0 ? rest.join(' ') : undefined;
 
-  return {
+  const payload = {
     email,
     password,
     firstName: firstName ?? email,
@@ -36,6 +45,18 @@ const mapRegistrationPayload = ({ email, password, fullName, contactNumber, role
     phoneNumber: contactNumber,
     role,
   };
+
+  if (academyName) {
+    payload.academyName = academyName;
+  }
+  if (academyDescription) {
+    payload.academyDescription = academyDescription;
+  }
+  if (academyId) {
+    payload.academyId = academyId;
+  }
+
+  return payload;
 };
 
 export function AuthProvider({ children }) {
@@ -45,6 +66,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isPending, setIsPending] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
+  const [academyMemberships, setAcademyMemberships] = useState([]);
+  const [pendingAcademyRequests, setPendingAcademyRequests] = useState([]);
+  const [ownerAcademy, setOwnerAcademy] = useState(null);
+  const [academyLimits, setAcademyLimits] = useState({ teacher: null, student: null });
+  const [loadingAcademies, setLoadingAcademies] = useState(false);
 
   const setDatabaseInitialized = useCallback((status) => {
     setDbInitialized(Boolean(status));
@@ -104,6 +130,75 @@ export function AuthProvider({ children }) {
     };
   }, [applySession]);
 
+  const loadAcademiesContext = useCallback(async () => {
+    if (!user?.id || user?.status !== 'APPROVED') {
+      setAcademyMemberships([]);
+      setPendingAcademyRequests([]);
+      setOwnerAcademy(null);
+      return { success: true, memberships: [] };
+    }
+
+    setLoadingAcademies(true);
+    try {
+      const approvedMembershipPromise = apiRequest(
+        '/academies/memberships?limit=100&page=1&status=APPROVED',
+      ).catch(() => null);
+      const pendingMembershipPromise = apiRequest(
+        '/academies/memberships?limit=100&page=1&status=PENDING',
+      ).catch(() => null);
+      const ownerPromise =
+        userRole === 'academy_owner'
+          ? apiRequest('/academies/owner').catch(() => null)
+          : Promise.resolve(null);
+      const platformSettingsPromise = apiRequest('/platform-settings').catch(() => null);
+
+      const [approvedMemberships, pendingMemberships, ownerDetails, platformSettings] =
+        await Promise.all([
+          approvedMembershipPromise,
+          pendingMembershipPromise,
+          ownerPromise,
+          platformSettingsPromise,
+        ]);
+
+      const approvedList = Array.isArray(approvedMemberships?.data)
+        ? approvedMemberships.data
+        : [];
+      const pendingList = Array.isArray(pendingMemberships?.data)
+        ? pendingMemberships.data
+        : [];
+
+      setAcademyMemberships(approvedList);
+      setPendingAcademyRequests(pendingList);
+      setOwnerAcademy(ownerDetails ?? null);
+      if (platformSettings) {
+        setAcademyLimits({
+          teacher: platformSettings.maxAcademiesPerTeacher ?? null,
+          student: platformSettings.maxAcademiesPerStudent ?? null,
+        });
+      }
+
+      return { success: true, memberships: approvedList };
+    } catch (error) {
+      console.error('Failed to load academy context', error);
+      setAcademyMemberships([]);
+      setPendingAcademyRequests([]);
+      setOwnerAcademy(null);
+      return { success: false, error };
+    } finally {
+      setLoadingAcademies(false);
+    }
+  }, [user?.id, user?.status, userRole]);
+
+  useEffect(() => {
+    if (!user?.id || user?.status !== 'APPROVED') {
+      setAcademyMemberships([]);
+      setPendingAcademyRequests([]);
+      setOwnerAcademy(null);
+      return;
+    }
+    loadAcademiesContext();
+  }, [loadAcademiesContext, user?.id, user?.status, userRole]);
+
   const signIn = useCallback(
     async (email, password) => {
       setLoading(true);
@@ -148,13 +243,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const registerAcademyOwner = useCallback(
-    async (email, password, fullName, _academyName, contactNumber, _academyAddress) => {
+    async (email, password, fullName, academyName, contactNumber, academyDescription) => {
       const payload = mapRegistrationPayload({
         email,
         password,
         fullName,
         contactNumber,
         role: 'ACADEMY_OWNER',
+        academyName,
+        academyDescription,
       });
       return registerViaAuth(payload);
     },
@@ -162,13 +259,14 @@ export function AuthProvider({ children }) {
   );
 
   const registerTeacher = useCallback(
-    async (email, password, fullName, _academyId, _specialization, _experience, contactNumber) => {
+    async (email, password, fullName, academyId, _specialization, _experience, contactNumber) => {
       const payload = mapRegistrationPayload({
         email,
         password,
         fullName,
         contactNumber,
         role: 'TEACHER',
+        academyId,
       });
       return registerViaAuth(payload);
     },
@@ -176,13 +274,14 @@ export function AuthProvider({ children }) {
   );
 
   const registerStudent = useCallback(
-    async (email, password, fullName, _academyId, contactNumber, _gradeLevel, _age, _guardianContact) => {
+    async (email, password, fullName, academyId, contactNumber, _gradeLevel, _age, _guardianContact) => {
       const payload = mapRegistrationPayload({
         email,
         password,
         fullName,
         contactNumber,
         role: 'STUDENT',
+        academyId,
       });
       return registerViaAuth(payload);
     },
@@ -227,17 +326,55 @@ export function AuthProvider({ children }) {
       const session = { user: latest };
       saveSession({ ...getStoredSession(), user: latest });
       applySession(session);
+      await loadAcademiesContext();
       return latest;
     } catch (error) {
       console.error('Failed to fetch user details', error);
       return null;
     }
-  }, [applySession, user?.id]);
+  }, [applySession, loadAcademiesContext, user?.id]);
 
-  const fetchAcademies = useCallback(async () => {
-    console.warn('fetchAcademies is not yet implemented against the backend');
-    return { success: false, error: 'Academy directory not available yet.' };
+  const fetchAcademies = useCallback(async ({ search = '', page = 1, limit = 20 } = {}) => {
+    try {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+      if (search.trim()) {
+        params.append('search', search.trim());
+      }
+      const response = await apiRequest(`/academies?${params.toString()}`);
+      return {
+        success: true,
+        data: Array.isArray(response?.data) ? response.data : [],
+        meta: response?.meta ?? null,
+      };
+    } catch (error) {
+      console.error('fetchAcademies failed', error);
+      return { success: false, error };
+    }
   }, []);
+
+  const requestAcademyMembership = useCallback(
+    async (academyId) => {
+      if (!academyId) {
+        return { success: false, error: 'Academy identifier is required.' };
+      }
+
+      try {
+        const result = await apiRequest('/academies/memberships', {
+          method: 'POST',
+          body: { academyId },
+        });
+        await loadAcademiesContext();
+        return { success: true, data: result };
+      } catch (error) {
+        console.error('requestAcademyMembership failed', error);
+        return { success: false, error };
+      }
+    },
+    [loadAcademiesContext],
+  );
 
   const signOut = useCallback(async () => {
     try {
@@ -245,6 +382,10 @@ export function AuthProvider({ children }) {
       await logoutFromServer(refreshToken ?? undefined);
     } finally {
       applySession(null);
+      setAcademyMemberships([]);
+      setPendingAcademyRequests([]);
+      setOwnerAcademy(null);
+      setAcademyLimits({ teacher: null, student: null });
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -259,12 +400,19 @@ export function AuthProvider({ children }) {
     isPending,
     dbInitialized,
     setDatabaseInitialized,
+    academyMemberships,
+    pendingAcademyRequests,
+    ownerAcademy,
+    academyLimits,
+    loadingAcademies,
+    refreshAcademyContext: loadAcademiesContext,
     registerAcademyOwner,
     registerTeacher,
     registerStudent,
     verifyRegistrationOtp,
     resendRegistrationOtp,
     fetchAcademies,
+    requestAcademyMembership,
     fetchUserDetails,
     signIn,
     signOut,

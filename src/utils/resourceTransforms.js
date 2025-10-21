@@ -6,6 +6,7 @@ export const mapResourceRecord = (record) => ({
   mimeType: record.mimeType ?? '',
   size: record.fileSize ?? 0,
   classId: record.classId ?? null,
+  academyId: record.academyId ?? null,
   class: record.classTitle ?? (record.classId ? 'Class Resource' : 'General'),
   uploaderId: record.uploaderId ?? null,
   uploader: record.uploaderName ?? 'Unknown',

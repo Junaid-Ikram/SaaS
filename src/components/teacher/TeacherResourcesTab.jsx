@@ -10,7 +10,11 @@ const TeacherResourcesTab = ({
   onUpdate,
   onDelete,
   classes,
+  hasAcademyAccess,
+  loadingAcademies,
 }) => {
+  const canManageResources = Boolean(hasAcademyAccess) && !loadingAcademies;
+
   return (
     <div className="space-y-4">
       {error ? (
@@ -18,15 +22,20 @@ const TeacherResourcesTab = ({
           {error}
         </div>
       ) : null}
+      {!canManageResources && !loadingAcademies ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          Join an academy to add and manage resources.
+        </div>
+      ) : null}
       <ResourcesTab
         resources={resources}
         classes={classes}
-        loading={loading}
+        loading={loading || loadingAcademies}
         onUploadResource={onCreate}
         onUpdateResource={onUpdate}
         onDeleteResource={onDelete}
         onRefreshResources={onRefresh}
-        canManage
+        canManage={canManageResources}
       />
     </div>
   );
