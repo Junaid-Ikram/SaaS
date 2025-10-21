@@ -30,6 +30,7 @@ const TabContent = ({
   pendingUsers,
   onApproveUser,
   onRejectUser,
+  onRevokeUser,
   onPurchaseCredits,
   notifications,
   setNotifications,
@@ -79,6 +80,7 @@ const TabContent = ({
             studentSummary={studentsSummary}
             onApproveUser={onApproveUser}
             onRejectUser={onRejectUser}
+            onRevokeUser={onRevokeUser}
             initialSubTab={requestedUsersTab}
           />
         );

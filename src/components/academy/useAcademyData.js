@@ -46,6 +46,15 @@ const safeLocaleDate = (value) => {
 
 const normaliseRole = (role) => (role ? role.toLowerCase() : null);
 
+const buildDisplayName = (user) => {
+  if (!user) return "Unknown";
+  const parts = [user.firstName, user.lastName].filter(Boolean);
+  if (parts.length > 0) {
+    return parts.join(" ");
+  }
+  return user.email ?? "Unknown";
+};
+
 const mapClassRecord = (record) => {
   const status = (record.status ?? "UPCOMING").toLowerCase();
   const teacherName = record.teacher
@@ -124,7 +133,7 @@ const mapTransactionRecord = (record) => {
 };
 
 const useAcademyData = () => {
-  const { user } = useAuth();
+  const { user, refreshAcademyContext } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -206,14 +215,17 @@ const useAcademyData = () => {
     [],
   );
 
-  const mapPendingRecord = useCallback(
-    (pending) => ({
-      id: pending.id,
-      name: buildDisplayName(pending),
-      email: pending.email,
-      role: normaliseRole(pending.role),
-      status: pending.status,
-      requestDate: safeLocaleDate(pending.createdAt),
+  const mapPendingMembershipRecord = useCallback(
+    (membership) => ({
+      id: membership.id,
+      membershipId: membership.id,
+      userId: membership.userId,
+      name: buildDisplayName(membership.user ?? {}),
+      email: membership.user?.email ?? "",
+      role: normaliseRole(membership.role),
+      status: membership.status,
+      requestDate: safeLocaleDate(membership.requestedAt),
+      reason: membership.reason ?? "",
     }),
     [],
   );
@@ -276,7 +288,13 @@ const useAcademyData = () => {
   const loadResources = useCallback(async () => {
     setResourcesLoading(true);
     try {
-      const response = await apiRequest('/resources?limit=100&page=1');
+      if (!academyData?.id) {
+        setResources([]);
+        return;
+      }
+
+      const resourceParams = new URLSearchParams({ limit: '100', page: '1', academyId: academyData.id });
+      const response = await apiRequest(`/resources?${resourceParams.toString()}`);
       const rawResources = Array.isArray(response?.data)
         ? response.data
         : Array.isArray(response)
@@ -311,13 +329,13 @@ const useAcademyData = () => {
       const [
         teachersApprovedResponse,
         studentsApprovedResponse,
-        teachersPendingResponse,
-        studentsPendingResponse,
+        pendingMembershipsResponse,
+        approvedMembershipsResponse,
       ] = await Promise.all([
         apiRequest("/users/teachers?limit=100&page=1&status=APPROVED"),
         apiRequest("/users/students?limit=100&page=1&status=APPROVED"),
-        apiRequest("/users/teachers?limit=100&page=1&status=PENDING"),
-        apiRequest("/users/students?limit=100&page=1&status=PENDING"),
+        apiRequest("/academies/owner/memberships?limit=100&page=1&status=PENDING"),
+        apiRequest("/academies/owner/memberships?limit=100&page=1&status=APPROVED"),
       ]);
 
       const teacherSummary =
@@ -325,13 +343,32 @@ const useAcademyData = () => {
       const studentSummary =
         studentsApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
 
+      const approvedMemberships = Array.isArray(approvedMembershipsResponse?.data)
+        ? approvedMembershipsResponse.data
+        : [];
+      const membershipByUserId = new Map(
+        approvedMemberships.map((membership) => [membership.userId, membership]),
+      );
+
       const mappedTeachers = Array.isArray(teachersApprovedResponse?.data)
-        ? teachersApprovedResponse.data.map(mapTeacherRecord)
+        ? teachersApprovedResponse.data.map((teacher) => ({
+            ...mapTeacherRecord(teacher),
+            membershipId:
+              membershipByUserId.get(teacher.id)?.role === "TEACHER"
+                ? membershipByUserId.get(teacher.id)?.id ?? null
+                : null,
+          }))
         : [];
 
       teacherIdsRef.current = new Set(mappedTeachers.map((teacher) => teacher.id));
       const mappedStudents = Array.isArray(studentsApprovedResponse?.data)
-        ? studentsApprovedResponse.data.map(mapStudentRecord)
+        ? studentsApprovedResponse.data.map((student) => ({
+            ...mapStudentRecord(student),
+            membershipId:
+              membershipByUserId.get(student.id)?.role === "STUDENT"
+                ? membershipByUserId.get(student.id)?.id ?? null
+                : null,
+          }))
         : [];
 
       setTeachers(mappedTeachers);
@@ -339,15 +376,10 @@ const useAcademyData = () => {
       setTeachersSummary(teacherSummary);
       setStudentsSummary(studentSummary);
 
-      const pendingTeachers = Array.isArray(teachersPendingResponse?.data)
-        ? teachersPendingResponse.data
+      const pendingMemberships = Array.isArray(pendingMembershipsResponse?.data)
+        ? pendingMembershipsResponse.data
         : [];
-      const pendingStudents = Array.isArray(studentsPendingResponse?.data)
-        ? studentsPendingResponse.data
-        : [];
-      const mappedPending = [...pendingTeachers, ...pendingStudents].map(
-        mapPendingRecord,
-      );
+      const mappedPending = pendingMemberships.map(mapPendingMembershipRecord);
       setPendingUsers(mappedPending);
 
       setSubscriptionUsage((prev) => ({
@@ -358,7 +390,7 @@ const useAcademyData = () => {
     } catch (error) {
       console.error("Failed to load user collections", error);
     }
-  }, [mapPendingRecord, mapStudentRecord, mapTeacherRecord]);
+  }, [mapPendingMembershipRecord, mapStudentRecord, mapTeacherRecord]);
 
   const loadData = useCallback(async () => {
     if (!userId) {
@@ -502,33 +534,33 @@ const useAcademyData = () => {
   }, [loadData]);
 
   const approvePendingUser = useCallback(
-    async (userIdToApprove) => {
+    async (membershipId) => {
       const pendingUser = pendingUsers.find(
-        (candidate) => candidate.id === userIdToApprove,
+        (candidate) => candidate.id === membershipId,
       );
       if (!pendingUser) {
-        return { success: false, error: "Pending user not found." };
+        return { success: false, error: "Pending membership not found." };
       }
 
       try {
-        await apiRequest(`/users/${userIdToApprove}/status`, {
+        await apiRequest(`/academies/memberships/${membershipId}`, {
           method: "PATCH",
-          body: { status: "APPROVED" },
+          body: { action: "APPROVE" },
         });
 
         setPendingUsers((prev) =>
-          prev.filter((userRecord) => userRecord.id !== userIdToApprove),
+          prev.filter((userRecord) => userRecord.id !== membershipId),
         );
-        await loadUserCollections();
+        await Promise.all([loadUserCollections(), refreshAcademyContext?.()]);
         showToast({
           status: "success",
-          title: "User approved",
+          title: "Membership approved",
           description: `${buildDisplayName(pendingUser)} now has access.`,
         });
         return { success: true };
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Unable to approve user.";
+          err instanceof Error ? err.message : "Unable to approve membership.";
         showToast({
           status: "error",
           title: "Approval failed",
@@ -537,15 +569,15 @@ const useAcademyData = () => {
         return { success: false, error: message };
       }
     },
-    [loadUserCollections, pendingUsers, showToast],
+    [loadUserCollections, pendingUsers, refreshAcademyContext, showToast],
   );
   const rejectPendingUser = useCallback(
-    async (userIdToReject, reason) => {
+    async (membershipId, reason) => {
       const pendingUser = pendingUsers.find(
-        (candidate) => candidate.id === userIdToReject,
+        (candidate) => candidate.id === membershipId,
       );
       if (!pendingUser) {
-        return { success: false, error: "Pending user not found." };
+        return { success: false, error: "Pending membership not found." };
       }
 
       const trimmedReason = reason?.trim();
@@ -554,24 +586,24 @@ const useAcademyData = () => {
       }
 
       try {
-        await apiRequest(`/users/${userIdToReject}/status`, {
+        await apiRequest(`/academies/memberships/${membershipId}`, {
           method: "PATCH",
-          body: { status: "REJECTED", rejectionReason: trimmedReason },
+          body: { action: "REJECT", reason: trimmedReason },
         });
 
         setPendingUsers((prev) =>
-          prev.filter((userRecord) => userRecord.id !== userIdToReject),
+          prev.filter((userRecord) => userRecord.id !== membershipId),
         );
-        await loadUserCollections();
+        await Promise.all([loadUserCollections(), refreshAcademyContext?.()]);
         showToast({
           status: "success",
-          title: "User rejected",
+          title: "Membership rejected",
           description: `${buildDisplayName(pendingUser)} has been notified.`,
         });
         return { success: true };
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : "Unable to reject user.";
+          err instanceof Error ? err.message : "Unable to reject membership.";
         showToast({
           status: "error",
           title: "Rejection failed",
@@ -580,7 +612,40 @@ const useAcademyData = () => {
         return { success: false, error: message };
       }
     },
-    [loadUserCollections, pendingUsers, showToast],
+    [loadUserCollections, pendingUsers, refreshAcademyContext, showToast],
+  );
+
+  const revokeMembership = useCallback(
+    async (membershipId, reason) => {
+      const trimmedReason = reason?.trim();
+      if (!trimmedReason) {
+        return { success: false, error: "Revocation reason is required." };
+      }
+
+      try {
+        await apiRequest(`/academies/memberships/${membershipId}`, {
+          method: "PATCH",
+          body: { action: "REVOKE", reason: trimmedReason },
+        });
+        await Promise.all([loadUserCollections(), refreshAcademyContext?.()]);
+        showToast({
+          status: "success",
+          title: "Access revoked",
+          description: "The user can no longer access this academy.",
+        });
+        return { success: true };
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Unable to revoke membership.";
+        showToast({
+          status: "error",
+          title: "Revocation failed",
+          description: message,
+        });
+        return { success: false, error: message };
+      }
+    },
+    [loadUserCollections, refreshAcademyContext, showToast],
   );
 
   const purchaseCredits = useCallback(
@@ -642,7 +707,7 @@ const useAcademyData = () => {
       try {
         await apiRequest("/resources", {
           method: "POST",
-          body: payload,
+          body: { ...payload, academyId: payload.academyId ?? academyData?.id ?? null },
         });
         await loadResources();
         showToast({
@@ -662,7 +727,7 @@ const useAcademyData = () => {
         return { success: false, error: message };
       }
     },
-    [loadResources, showToast],
+    [academyData?.id, loadResources, showToast],
   );
 
   const updateResource = useCallback(
@@ -670,7 +735,7 @@ const useAcademyData = () => {
       try {
         await apiRequest(`/resources/${resourceId}`, {
           method: "PATCH",
-          body: updates,
+          body: { ...updates, academyId: updates.academyId ?? academyData?.id ?? null },
         });
         await loadResources();
         showToast({
@@ -690,7 +755,7 @@ const useAcademyData = () => {
         return { success: false, error: message };
       }
     },
-    [loadResources, showToast],
+    [academyData?.id, loadResources, showToast],
   );
 
   const deleteResource = useCallback(

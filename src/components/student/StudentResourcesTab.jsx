@@ -7,6 +7,8 @@ const StudentResourcesTab = ({
   error,
   onRefresh,
   classes,
+  hasAcademyAccess,
+  loadingAcademies,
 }) => {
   return (
     <div className="space-y-4">
@@ -15,10 +17,15 @@ const StudentResourcesTab = ({
           {error}
         </div>
       ) : null}
+      {!hasAcademyAccess && !loadingAcademies ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+          Join an academy to access shared study materials.
+        </div>
+      ) : null}
       <ResourcesTab
         resources={resources}
         classes={classes}
-        loading={loading}
+        loading={loading || loadingAcademies}
         onRefreshResources={onRefresh}
         canManage={false}
       />

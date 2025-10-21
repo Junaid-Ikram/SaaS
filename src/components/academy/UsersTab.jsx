@@ -26,6 +26,7 @@ const UsersTab = ({
   studentSummary = SUMMARY_TEMPLATE,
   onApproveUser,
   onRejectUser,
+  onRevokeUser,
   initialSubTab = 'teachers',
 }) => {
   const [activeSubTab, setActiveSubTab] = useState('teachers');
@@ -38,6 +39,7 @@ const UsersTab = ({
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [userPendingAction, setUserPendingAction] = useState(null);
+  const [pendingActionType, setPendingActionType] = useState('reject');
 
   useEffect(() => {
     const normalised = (initialSubTab ?? '').toLowerCase();
@@ -124,6 +126,7 @@ const UsersTab = ({
   };
 
   const handleReject = (user) => {
+
     if (!user?.id) {
       return;
     }
@@ -131,6 +134,7 @@ const UsersTab = ({
     setActionError(null);
     setActionSuccess(null);
     setRejectReason('');
+    setPendingActionType('reject');
     setUserPendingAction(user);
     setRejectModalOpen(true);
   };
@@ -144,29 +148,47 @@ const UsersTab = ({
   };
 
   const submitReject = async () => {
-    if (!onRejectUser || !userPendingAction?.id) {
+    const trimmedReason = rejectReason.trim();
+    if (!trimmedReason) {
+      setActionError('A reason is required.');
       return;
     }
 
-    const trimmedReason = rejectReason.trim();
-    if (!trimmedReason) {
-      setActionError('Rejection reason is required.');
+    if (pendingActionType === 'revoke') {
+      if (!onRevokeUser || !userPendingAction?.membershipId) {
+        setActionError('Membership details unavailable.');
+        return;
+      }
+    } else if (!onRejectUser || !userPendingAction?.id) {
       return;
     }
 
     try {
       setActionError(null);
       setActionSuccess(null);
-      setActionLoadingId(userPendingAction.id);
-      const result = await onRejectUser(userPendingAction.id, trimmedReason);
+      const targetId =
+        pendingActionType === 'revoke'
+          ? userPendingAction.membershipId
+          : userPendingAction.id;
+      setActionLoadingId(targetId);
+      const result =
+        pendingActionType === 'revoke'
+          ? await onRevokeUser(targetId, trimmedReason)
+          : await onRejectUser(targetId, trimmedReason);
       if (result?.success === false) {
-        setActionError(result.error ?? 'Unable to reject user.');
+        setActionError(result.error ?? 'Action could not be completed.');
       } else {
-        setActionSuccess('User rejected successfully.');
+        setActionSuccess(
+          pendingActionType === 'revoke'
+            ? 'Membership revoked successfully.'
+            : 'User rejected successfully.',
+        );
         closeRejectModal();
       }
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : 'Unable to reject user.');
+      const message =
+        error instanceof Error ? error.message : 'Action could not be completed.';
+      setActionError(message);
     } finally {
       setActionLoadingId(null);
     }
@@ -211,12 +233,21 @@ const UsersTab = ({
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                      <button
-                        onClick={() => handleViewUser(teacher)}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        View Profile
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewUser(teacher)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          onClick={() => handleRevoke(teacher)}
+                          disabled={!teacher.membershipId}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
+                        >
+                          Revoke access
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -247,12 +278,21 @@ const UsersTab = ({
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                      <button
-                        onClick={() => handleViewUser(student)}
-                        className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        View Profile
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleViewUser(student)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          View Profile
+                        </button>
+                        <button
+                          onClick={() => handleRevoke(student)}
+                          disabled={!student.membershipId}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
+                        >
+                          Revoke access
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -420,16 +460,18 @@ const UsersTab = ({
       {rejectModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Reject Application</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {pendingActionType === 'revoke' ? 'Revoke Access' : 'Reject Application'}
+            </h3>
             <p className="mt-2 text-sm text-gray-600">
-              Provide a reason for rejecting {userPendingAction?.name ?? 'this user'}.
+              Provide a reason for {pendingActionType === 'revoke' ? 'revoking access' : 'rejecting'} {userPendingAction?.name ?? 'this user'}.
             </p>
             <textarea
               className="mt-4 w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               rows={4}
               value={rejectReason}
               onChange={(event) => setRejectReason(event.target.value)}
-              placeholder="Reason for rejection"
+              placeholder={pendingActionType === 'revoke' ? 'Reason for revocation' : 'Reason for rejection'}
             />
             <div className="mt-6 flex justify-end gap-3">
               <button

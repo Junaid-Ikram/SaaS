@@ -21,12 +21,19 @@ const formatDate = (value) => {
 };
 
 const useStudentDashboardData = () => {
-  const { user } = useAuth();
+  const { user, academyMemberships, loadingAcademies } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+
+  const activeAcademyId = useMemo(
+    () => academyMemberships?.[0]?.academyId ?? null,
+    [academyMemberships],
+  );
+
+  const hasAcademyAccess = Boolean(activeAcademyId);
 
   const upcomingClasses = useMemo(
     () => classes.filter((cls) => cls.status === 'upcoming').sort((a, b) => new Date(a.start) - new Date(b.start)),
@@ -40,13 +47,22 @@ const useStudentDashboardData = () => {
   }), [classes.length, upcomingClasses.length, teachers.length]);
 
   const load = useCallback(async () => {
+    if (!activeAcademyId) {
+      setClasses([]);
+      setTeachers([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
+      const classParams = new URLSearchParams({ limit: '50', page: '1', academyId: activeAcademyId });
+      const teacherParams = new URLSearchParams({ limit: '100', page: '1', status: 'APPROVED', academyId: activeAcademyId });
       const [classResponse, teachersResponse] = await Promise.all([
-        apiRequest('/classes?limit=50&page=1'),
-        apiRequest('/users/teachers?limit=100&page=1&status=APPROVED'),
+        apiRequest(`/classes?${classParams.toString()}`),
+        apiRequest(`/users/teachers?${teacherParams.toString()}`),
       ]);
 
       const fetchedClasses = (classResponse?.data ?? []).map(mapClass);
@@ -66,7 +82,7 @@ const useStudentDashboardData = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeAcademyId]);
 
   useEffect(() => {
     load();
@@ -81,6 +97,9 @@ const useStudentDashboardData = () => {
     metrics,
     upcomingClasses,
     refresh: load,
+    hasAcademyAccess,
+    loadingAcademies,
+    activeAcademyId,
   };
 };
 
