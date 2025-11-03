@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
@@ -23,6 +23,39 @@ const MODAL_SIZES = {
   sm: "max-w-sm",
   md: "max-w-lg",
   lg: "max-w-2xl",
+  xl: "max-w-4xl",
+};
+
+const statusBadgeClasses = {
+  approved: "bg-emerald-50 text-emerald-700",
+  pending: "bg-amber-50 text-amber-700",
+  rejected: "bg-rose-50 text-rose-700",
+  inactive: "bg-gray-100 text-gray-600",
+};
+
+const normaliseText = (value) => (value ?? '').toString().trim();
+
+const getInitials = (name, email) => {
+  const source = normaliseText(name) || normaliseText(email);
+  if (!source) {
+    return 'NA';
+  }
+  const parts = source
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((part) => part[0]);
+  return parts.join('').slice(0, 2).toUpperCase();
+};
+
+const formatInlineValue = (value, empty = '--') => {
+  const normalised = normaliseText(value);
+  if (!normalised) {
+    return empty;
+  }
+  if (normalised.toUpperCase() === 'N/A') {
+    return empty;
+  }
+  return normalised;
 };
 
 const Modal = ({ open, onClose, title, children, footer, size = "md" }) => {
@@ -137,16 +170,68 @@ const UsersTab = ({
 
   const filterUsers = (list = []) => {
     if (!normalisedSearch) return list;
-    return list.filter((user) => {
-      const name = toSearchableString(user?.name);
-      const email = toSearchableString(user?.email);
-      return name.includes(normalisedSearch) || email.includes(normalisedSearch);
+    return list.filter((user = {}) => {
+      const fields = [
+        user.name,
+        user.email,
+        user.phoneNumber,
+        user.addressCity,
+        user.addressState,
+        user.addressCountry,
+        user.role,
+        user.status,
+      ];
+      const searchSpace = fields.map(toSearchableString).join(' ');
+      return searchSpace.includes(normalisedSearch);
     });
   };
 
   const filteredTeachers = useMemo(() => filterUsers(teachers), [teachers, normalisedSearch]);
   const filteredStudents = useMemo(() => filterUsers(students), [students, normalisedSearch]);
   const filteredPending = useMemo(() => filterUsers(pendingUsers), [pendingUsers, normalisedSearch]);
+
+  const renderAvatar = (user) => {
+    if (user?.avatarUrl) {
+      return (
+        <img
+          src={user.avatarUrl}
+          alt={`${user?.name ?? 'User'} avatar`}
+          className="h-14 w-14 rounded-full object-cover shadow-sm ring-2 ring-emerald-100"
+        />
+      );
+    }
+    return (
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-2 ring-emerald-100 shadow-inner">
+        <span className="text-sm font-semibold">{getInitials(user?.name, user?.email)}</span>
+      </div>
+    );
+  };
+
+  const renderStatusBadge = (status) => {
+    if (!status) return null;
+    const key = status.toString().toLowerCase();
+    const classes = statusBadgeClasses[key] ?? "bg-gray-100 text-gray-600";
+    const label = key.replace(/_/g, ' ');
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${classes}`}>
+        {label}
+      </span>
+    );
+  };
+
+  const renderFactRow = (items, options = {}) => {
+    const { className = '' } = options;
+    return (
+      <div className={`mt-3 flex flex-wrap gap-x-6 gap-y-2 text-sm text-gray-600 ${className}`}>
+        {items.map(({ label, value }) => (
+          <span key={label} className="flex items-center gap-1">
+            <span className="font-medium text-gray-700">{label}:</span>
+            <span>{formatInlineValue(value)}</span>
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   const handleViewUser = (user) => {
     setSelectedUser(user);
@@ -291,48 +376,56 @@ const UsersTab = ({
     </div>
   );
 
-  const renderStatsRow = (primary, secondary) => (
-    <p>
-      {primary}
-      {secondary ? ` | ${secondary}` : ''}
-    </p>
-  );
-
   const renderTeachers = () => (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white shadow overflow-hidden sm:rounded-xl">
       {filteredTeachers.length === 0
         ? renderEmptyState('teachers')
         : (
           <ul className="divide-y divide-gray-200">
             {filteredTeachers.map((teacher) => (
               <li key={teacher.id}>
-                <div className="px-4 py-4 flex items-center sm:px-6">
-                  <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <div className="flex text-sm">
-                        <p className="font-medium text-blue-600 truncate">{teacher.name}</p>
-                        <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{teacher.email}</p>
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${teacher.joinDate ?? '—'}`, `${teacher.classes ?? 0} classes`)}
+                <div className="px-4 py-5 sm:px-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-1 gap-4">
+                      <div className="flex-shrink-0">{renderAvatar(teacher)}</div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-base font-semibold text-gray-900">{teacher.name}</p>
+                          {renderStatusBadge(teacher.status)}
+                          <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                            {teacher.role ?? 'teacher'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">{teacher.email}</p>
+                        {renderFactRow([
+                          { label: 'Phone', value: teacher.phoneNumber },
+                          { label: 'Joined', value: teacher.joinDate },
+                          { label: 'Classes', value: teacher.classes ?? 0 },
+                        ])}
+                        {renderFactRow(
+                          [
+                            { label: 'City', value: teacher.addressCity },
+                            { label: 'State', value: teacher.addressState },
+                            { label: 'Country', value: teacher.addressCountry },
+                          ],
+                          { className: 'text-sm' },
+                        )}
                       </div>
                     </div>
-                    <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleViewUser(teacher)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          onClick={() => handleRevoke(teacher)}
-                          disabled={!teacher.membershipId}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
-                        >
-                          Revoke access
-                        </button>
-                      </div>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      <button
+                        onClick={() => handleViewUser({ ...teacher, recordType: 'teacher' })}
+                        className="inline-flex items-center justify-center rounded-md border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                      >
+                        View profile
+                      </button>
+                      <button
+                        onClick={() => handleRevoke(teacher)}
+                        disabled={!teacher.membershipId}
+                        className="inline-flex items-center justify-center rounded-md border border-transparent px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Revoke access
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -344,40 +437,52 @@ const UsersTab = ({
   );
 
   const renderStudents = () => (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white shadow overflow-hidden sm:rounded-xl">
       {filteredStudents.length === 0
         ? renderEmptyState('students')
         : (
           <ul className="divide-y divide-gray-200">
             {filteredStudents.map((student) => (
               <li key={student.id}>
-                <div className="px-4 py-4 flex items-center sm:px-6">
-                  <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <div className="flex text-sm">
-                        <p className="font-medium text-blue-600 truncate">{student.name}</p>
-                        <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{student.email}</p>
-                      </div>
-                      <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${student.joinDate ?? '—'}`, `${student.enrolledClasses ?? 0} classes`)}
+                <div className="px-4 py-5 sm:px-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-1 gap-4">
+                      <div className="flex-shrink-0">{renderAvatar(student)}</div>
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-base font-semibold text-gray-900">{student.name}</p>
+                          {renderStatusBadge(student.status)}
+                          <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                            {student.role ?? 'student'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">{student.email}</p>
+                        {renderFactRow([
+                          { label: 'Phone', value: student.phoneNumber },
+                          { label: 'Joined', value: student.joinDate },
+                          { label: 'Enrolled classes', value: student.enrolledClasses ?? 0 },
+                        ])}
+                        {renderFactRow([
+                          { label: 'Date of birth', value: student.dateOfBirth },
+                          { label: 'City', value: student.addressCity },
+                          { label: 'Country', value: student.addressCountry },
+                        ])}
                       </div>
                     </div>
-                    <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleViewUser(student)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                        >
-                          View Profile
-                        </button>
-                        <button
-                          onClick={() => handleRevoke(student)}
-                          disabled={!student.membershipId}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-600 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
-                        >
-                          Revoke access
-                        </button>
-                      </div>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      <button
+                        onClick={() => handleViewUser({ ...student, recordType: 'student' })}
+                        className="inline-flex items-center justify-center rounded-md border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                      >
+                        View profile
+                      </button>
+                      <button
+                        onClick={() => handleRevoke(student)}
+                        disabled={!student.membershipId}
+                        className="inline-flex items-center justify-center rounded-md border border-transparent px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Revoke access
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -389,46 +494,70 @@ const UsersTab = ({
   );
 
   const renderPending = () => (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white shadow overflow-hidden sm:rounded-xl">
       {filteredPending.length === 0
         ? renderEmptyState('pending')
         : (
           <ul className="divide-y divide-gray-200">
             {filteredPending.map((user) => {
               const isProcessing = actionLoadingId === user.id;
+              const roleLabel = (user.role ?? '').replace(/_/g, ' ');
+              const reasonText = formatInlineValue(user.reason, '');
               return (
                 <li key={user.id}>
-                  <div className="px-4 py-4 flex items-center sm:px-6">
-                    <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
-                      <div>
-                        <div className="flex text-sm">
-                          <p className="font-medium text-blue-600 truncate">{user.name}</p>
-                          <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{user.email}</p>
-                        </div>
-                        <div className="mt-2 text-sm text-gray-500">
-                          {renderStatsRow(
-                            `Requested ${user.requestDate ?? '—'}`,
-                            `Role: ${(user.role ?? '').replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`,
-                          )}
+                  <div className="px-4 py-5 sm:px-6">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex flex-1 gap-4">
+                        <div className="flex-shrink-0">{renderAvatar(user)}</div>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-base font-semibold text-gray-900">{user.name}</p>
+                            {renderStatusBadge(user.status)}
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                              {roleLabel || 'pending user'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                          {renderFactRow([
+                            { label: 'Requested', value: user.requestDate },
+                            { label: 'Phone', value: user.phoneNumber },
+                            { label: 'Gender', value: user.gender },
+                          ])}
+                          {renderFactRow([
+                            { label: 'Date of birth', value: user.dateOfBirth },
+                            { label: 'City', value: user.addressCity },
+                            { label: 'Country', value: user.addressCountry },
+                          ])}
+                          {reasonText ? (
+                            <div className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                              <span className="font-medium text-gray-700">Message:</span> {reasonText}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
-                      <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
-                        <div className="flex space-x-2">
+                      <div className="flex flex-col gap-2 sm:items-end">
+                        <button
+                          onClick={() => handleViewUser({ ...user, recordType: 'pending' })}
+                          className="inline-flex items-center justify-center rounded-md border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                        >
+                          View profile
+                        </button>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:gap-3">
                           <button
                             onClick={() => handleApprove(user)}
                             disabled={isProcessing}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60"
+                            className="inline-flex items-center justify-center rounded-md border border-transparent px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <FaUserCheck className="mr-1" />
-                            {isProcessing ? 'Processing…' : 'Approve'}
+                            {isProcessing ? 'Processing...' : 'Approve'}
                           </button>
                           <button
                             onClick={() => handleReject(user)}
                             disabled={isProcessing}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
+                            className="inline-flex items-center justify-center rounded-md border border-transparent px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <FaUserTimes className="mr-1" />
-                            {isProcessing ? 'Processing…' : 'Reject'}
+                            {isProcessing ? 'Processing...' : 'Reject'}
                           </button>
                         </div>
                       </div>
@@ -441,6 +570,7 @@ const UsersTab = ({
         )}
     </div>
   );
+
 
   return (
     <motion.div
@@ -631,35 +761,89 @@ const UsersTab = ({
       </Modal>
 
       {showUserModal && selectedUser && (
-        <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" />
-            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div className="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-              <div>
-                <div className="mt-3 text-center sm:mt-5">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                    {selectedUser.name}
-                  </h3>
-                  <div className="mt-2 space-y-2">
-                    <p className="text-sm text-gray-500">Email: {selectedUser.email}</p>
-                    {selectedUser.phoneNumber && (
-                      <p className="text-sm text-gray-500">Phone: {selectedUser.phoneNumber}</p>
-                    )}
-                    {selectedUser.joinDate && (
-                      <p className="text-sm text-gray-500">Joined: {selectedUser.joinDate}</p>
-                    )}
-                    {selectedUser.status && (
-                      <p className="text-sm text-gray-500">Status: {selectedUser.status}</p>
-                    )}
+        <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+          <div className="flex min-h-screen items-center justify-center px-4 py-8 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-gray-500/70 transition-opacity" aria-hidden="true" />
+            <span className="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <div className="inline-block w-full max-w-2xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-bottom shadow-2xl transition-all sm:my-8 sm:align-middle sm:p-8">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+                <div className="mx-auto flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 ring-2 ring-emerald-200 shadow-inner sm:mx-0">
+                  {selectedUser.avatarUrl ? (
+                    <img
+                      src={selectedUser.avatarUrl}
+                      alt={`${selectedUser.name} avatar`}
+                      className="h-20 w-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xl font-semibold">{getInitials(selectedUser.name, selectedUser.email)}</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-xl font-semibold text-gray-900">{selectedUser.name}</h3>
+                    {renderStatusBadge(selectedUser.status)}
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                      {(selectedUser.role ?? '').replace(/_/g, ' ') || 'User'}
+                    </span>
+                  </div>
+                  <div className="grid gap-4 text-sm text-gray-700 sm:grid-cols-2">
+                    <div>
+                      <p className="font-medium text-gray-500">Email</p>
+                      <p>{selectedUser.email}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-500">Phone</p>
+                      <p>{formatInlineValue(selectedUser.phoneNumber, 'Not provided')}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-500">Joined</p>
+                      <p>{formatInlineValue(selectedUser.joinDate, 'Not available')}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-500">Classes</p>
+                      <p>
+                        {selectedUser.recordType === 'teacher'
+                          ? `${selectedUser.classes ?? 0} taught`
+                          : selectedUser.recordType === 'student'
+                          ? `${selectedUser.enrolledClasses ?? 0} enrolled`
+                          : 'Not applicable'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-500">Gender</p>
+                      <p>{formatInlineValue(selectedUser.gender, 'Not provided')}</p>
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-500">Date of birth</p>
+                      <p>{formatInlineValue(selectedUser.dateOfBirth, 'Not provided')}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="font-medium text-gray-500">Address</p>
+                      <p>
+                        {formatInlineValue(
+                          [selectedUser.addressHouse, selectedUser.addressStreet, selectedUser.addressCity, selectedUser.addressState, selectedUser.addressCountry]
+                            .filter(Boolean)
+                            .join(', '),
+                          'Not provided',
+                        )}
+                      </p>
+                    </div>
+                    {selectedUser.bio ? (
+                      <div className="sm:col-span-2">
+                        <p className="font-medium text-gray-500">Bio</p>
+                        <p className="text-gray-600">{selectedUser.bio}</p>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>
-              <div className="mt-5 sm:mt-6">
+              <div className="mt-6 flex justify-end">
                 <button
                   type="button"
-                  className="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
                   onClick={() => setShowUserModal(false)}
+                  className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
                 >
                   Close
                 </button>

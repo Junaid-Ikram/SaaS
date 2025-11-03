@@ -1,20 +1,22 @@
-﻿import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
 import useStudentDashboardData from '../components/student/useStudentDashboardData';
 import useStudentResources from '../components/student/useStudentResources';
 import StudentResourcesTab from '../components/student/StudentResourcesTab';
 import AcademyDirectory from '../components/academy/AcademyDirectory';
+import ProfileTab from '../components/profile/ProfileTab';
 
 const formatDate = (value) => {
-  if (!value) return '—';
+  if (!value) return '-';
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleString();
+  return Number.isNaN(parsed.getTime()) ? '-' : parsed.toLocaleString();
 };
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('courses');
+  const { user, userDetails } = useAuth();
   const {
-    user,
     loading,
     error,
     classes,
@@ -51,7 +53,7 @@ const StudentDashboard = () => {
   const renderLoading = () => (
     <div className="min-h-[50vh] flex flex-col items-center justify-center text-gray-500">
       <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-      <p>Preparing your learning dashboard…</p>
+      <p>Preparing your learning dashboardâ€¦</p>
     </div>
   );
 
@@ -107,6 +109,7 @@ const StudentDashboard = () => {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Teacher</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Starts</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -127,6 +130,20 @@ const StudentDashboard = () => {
                       <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${cls.status === 'upcoming' ? 'bg-emerald-100 text-emerald-800' : cls.status === 'ended' ? 'bg-gray-200 text-gray-700' : 'bg-yellow-100 text-yellow-800'}`}>
                         {cls.status.replace(/\b\w/g, (c) => c.toUpperCase())}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {cls.status === 'upcoming' && cls.joinUrl ? (
+                        <a
+                          href={cls.joinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2"
+                        >
+                          Join class
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">Not available</span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -196,12 +213,40 @@ const StudentDashboard = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
-      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
-        <h1 className="text-3xl font-bold text-emerald-700">Student Dashboard</h1>
-        <p className="text-gray-600">Hello{user?.firstName ? `, ${user.firstName}` : ''}! Here's what's happening in your classes.</p>
+      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className={`flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 shadow-inner ${(user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl) ? 'bg-white' : 'bg-gradient-to-br from-emerald-500 to-emerald-600'}`}
+            >
+              {(user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl) ? (
+                <img
+                  src={user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl}
+                  alt="Your avatar"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-base font-semibold uppercase tracking-widest text-white">
+                  {[user?.firstName, user?.lastName]
+                    .filter(Boolean)
+                    .map((part) => (part ? part.charAt(0) : ''))
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase() || (user?.email ?? 'YOU').slice(0, 2).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-emerald-700">Student Dashboard</h1>
+              <p className="text-gray-600">
+                Hello{user?.firstName ? `, ${user.firstName}` : ''}! Here's what's happening in your classes.
+              </p>
+            </div>
+          </div>
+        </div>
         {nextClass && (
-          <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-lg p-4 text-sm text-emerald-900">
-            <span className="font-semibold">Next class:</span> {nextClass.title} with {nextClass.teacher} � {formatDate(nextClass.start)}
+          <div className="max-w-xl rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
+            <span className="font-semibold">Next class:</span> {nextClass.title} with {nextClass.teacher} - {formatDate(nextClass.start)}
           </div>
         )}
       </motion.div>
@@ -256,8 +301,12 @@ const StudentDashboard = () => {
             />
           )}
           {activeTab === 'academies' && <AcademyDirectory />}
-          {activeTab === 'profile' &&
-            renderPlaceholder('My Profile', 'Profile management is on the roadmap for a future release.')}
+          {activeTab === 'profile' ? (
+            <ProfileTab
+              title="My Profile"
+              subtitle="Express your learning style, keep details updated, and sparkle across the platform."
+            />
+          ) : null}
         </motion.div>
       )}
     </div>

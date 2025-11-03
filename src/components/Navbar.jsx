@@ -1,15 +1,17 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-import { FaArrowRight, FaBars, FaBell, FaChalkboardTeacher, FaChartBar, FaChevronDown, FaCog, FaEnvelope, FaGraduationCap, FaHome, FaInfoCircle, FaSignOutAlt, FaTag, FaTimes, FaUser, FaUsers } from 'react-icons/fa';
+import { FaArrowRight, FaBars, FaBell, FaChalkboardTeacher, FaChartBar, FaChevronDown, FaCog, FaEnvelope, FaGraduationCap, FaHome, FaInfoCircle, FaLock, FaSignOutAlt, FaTag, FaTimes, FaUser, FaUsers } from 'react-icons/fa';
 import { HiOutlineAcademicCap } from 'react-icons/hi';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ChangePasswordModal from './common/ChangePasswordModal';
 
 const Navbar = () => {
   const { user, userRole, userDetails, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const location = useLocation();
 
   // Handle scroll effect
@@ -64,21 +66,39 @@ const Navbar = () => {
     return user.email.split('@')[0];
   };
 
+  const avatarUrl = userDetails?.profilePhotoUrl ?? user?.profilePhotoUrl ?? null;
+
+  const getAvatarInitials = () => {
+    if (!user) return 'YOU';
+    const source = getUserDisplayName();
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return (user.email ?? '').slice(0, 2).toUpperCase();
+    }
+    const initials = (parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1]?.[0] ?? '' : '');
+    return initials.toUpperCase();
+  };
+
   const dashboardPrefixes = ['/dashboard', '/academy', '/teacher', '/student', '/super-admin'];
   const isDashboardRoute = dashboardPrefixes.some((prefix) => location.pathname.startsWith(prefix));
   const navOffsetClasses = isDashboardRoute ? 'lg:left-64 lg:w-[calc(100%-16rem)]' : '';
 
   return (
-    <motion.nav 
+    <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className={`fixed z-50 w-full transition-all duration-300 ${navOffsetClasses} ${scrolled ? 'bg-white/95 backdrop-blur-xl shadow-md border-b border-emerald-100' : 'bg-white/80 backdrop-blur-md'}`}
+
+      className={`fixed z-50 w-full transition-all duration-300 ${navOffsetClasses} ${
+        scrolled
+          ? "bg-white/95 backdrop-blur-xl shadow-md border-b border-emerald-100"
+          : "bg-white/80 backdrop-blur-md"
+      }`}
     >
       <div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center">
-            <motion.div 
+            <motion.div
               className="flex-shrink-0"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
@@ -137,7 +157,7 @@ const Navbar = () => {
                     >
                       Dashboard
                     </Link>
-                    {userRole === 'super_admin' && (
+                    {userRole === "super_admin" && (
                       <>
                         <Link
                           to="/super-admin/academies"
@@ -165,7 +185,7 @@ const Navbar = () => {
                         </Link>
                       </>
                     )}
-                    {userRole === 'academy_owner' && (
+                    {userRole === "academy_owner" && (
                       <Link
                         to="/academy/subscription"
                         className="px-3 py-2 text-sm font-medium text-gray-700 transition-all duration-200 border-b-2 border-transparent hover:text-primary-600 hover:border-primary-500"
@@ -191,33 +211,53 @@ const Navbar = () => {
                     <FaBell className="w-5 h-5" />
                     <span className="absolute w-4 h-4 bg-red-500 border-2 border-white rounded-full -top-1 -right-1"></span>
                   </motion.button>
-                  
+
                   {/* Profile Dropdown */}
                   <div className="relative">
-                    <motion.button 
+                    <motion.button
                       onClick={() => setProfileDropdown(!profileDropdown)}
                       className="flex items-center px-3 py-2 space-x-2 transition-all duration-200 bg-white border border-gray-200 rounded-full shadow-sm hover:bg-gray-50 hover:border-primary-300"
                       whileHover={{ y: -1 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      <div className="flex items-center justify-center rounded-full w-7 h-7 bg-gradient-to-br from-primary-500 to-primary-600">
-                        <FaUser className="h-3.5 w-3.5 text-white" />
+                      <div
+                        className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-primary-200 shadow-inner ${
+                          avatarUrl
+                            ? "bg-white"
+                            : "bg-gradient-to-br from-primary-500 to-primary-600"
+                        }`}
+                      >
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt="Profile avatar"
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-xs font-semibold tracking-wider text-white uppercase">
+                            {getAvatarInitials()}
+                          </span>
+                        )}
                       </div>
                       <div className="hidden text-left xl:block">
-                        <div className="text-sm font-medium text-gray-800">{getUserDisplayName()}</div>
+                        <div className="text-sm font-medium text-gray-800">
+                          {getUserDisplayName()}
+                        </div>
                         {userRole && (
                           <div className="text-xs font-medium text-primary-600">
-                            {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {userRole
+                              .replace("_", " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
                           </div>
                         )}
                       </div>
                       <FaChevronDown className="w-3 h-3 text-gray-400" />
                     </motion.button>
-                  
+
                     {/* Profile Dropdown */}
                     <AnimatePresence>
                       {profileDropdown && (
-                        <motion.div 
+                        <motion.div
                           initial={{ opacity: 0, y: 10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -225,46 +265,101 @@ const Navbar = () => {
                           className="absolute right-0 z-50 w-56 py-2 mt-2 bg-white border border-gray-100 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5"
                         >
                           <div className="px-4 py-3 border-b border-gray-100">
-                            <p className="text-sm font-medium text-gray-800">{getUserDisplayName()}</p>
-                            <p className="text-xs text-gray-500 truncate mt-0.5">{user?.email}</p>
+                            <div className="flex items-center gap-3">
+                              <div
+                                className={`flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-primary-200 shadow-inner ${
+                                  avatarUrl
+                                    ? "bg-white"
+                                    : "bg-gradient-to-br from-primary-500 to-primary-600"
+                                }`}
+                              >
+                                {avatarUrl ? (
+                                  <img
+                                    src={avatarUrl}
+                                    alt="Profile avatar"
+                                    className="object-cover w-full h-full"
+                                  />
+                                ) : (
+                                  <span className="text-sm font-semibold tracking-wider text-white uppercase">
+                                    {getAvatarInitials()}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-800">
+                                  {getUserDisplayName()}
+                                </p>
+                                <p className="mt-0.5 text-xs text-gray-500 truncate">
+                                  {user?.email}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          
+
                           <div className="py-1">
-                            <Link to={getDashboardLink()} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                            <Link
+                              to={getDashboardLink()}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                            >
                               <FaChalkboardTeacher className="w-4 h-4 mr-3 text-gray-400" />
                               Dashboard
                             </Link>
-                            
-                            {userRole === 'academy_owner' && (
-                              <Link to="/academy/subscription" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+
+                            {userRole === "academy_owner" && (
+                              <Link
+                                to="/academy/subscription"
+                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                              >
                                 <FaGraduationCap className="w-4 h-4 mr-3 text-gray-400" />
                                 Subscription
                               </Link>
                             )}
 
-                            {userRole === 'super_admin' && (
+                            {userRole === "super_admin" && (
                               <>
-                                <Link to="/super-admin/academies" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                <Link
+                                  to="/super-admin/academies"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                                >
                                   <FaGraduationCap className="w-4 h-4 mr-3 text-gray-400" />
                                   Academy management
                                 </Link>
-                                <Link to="/super-admin/users" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                <Link
+                                  to="/super-admin/users"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                                >
                                   <FaUsers className="w-4 h-4 mr-3 text-gray-400" />
                                   User management
                                 </Link>
-                                <Link to="/super-admin/platform-settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                <Link
+                                  to="/super-admin/platform-settings"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                                >
                                   <FaCog className="w-4 h-4 mr-3 text-gray-400" />
                                   Platform settings
                                 </Link>
-                                <Link to="/super-admin/reports" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600">
+                                <Link
+                                  to="/super-admin/reports"
+                                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                                >
                                   <FaChartBar className="w-4 h-4 mr-3 text-gray-400" />
                                   Reports &amp; billing
                                 </Link>
                               </>
                             )}
                           </div>
-                          
+
                           <div className="py-1 border-t border-gray-100">
+                            <button
+                              onClick={() => {
+                                setProfileDropdown(false);
+                                setShowChangePassword(true);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                            >
+                              <FaLock className="w-4 h-4 mr-3 text-gray-400" />
+                              Change password
+                            </button>
                             <button
                               onClick={signOut}
                               className="flex items-center w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
@@ -321,7 +416,7 @@ const Navbar = () => {
 
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
@@ -370,7 +465,7 @@ const Navbar = () => {
                     <FaChalkboardTeacher className="w-5 h-5 text-gray-400" />
                     <span className="font-medium">Dashboard</span>
                   </Link>
-                  {userRole === 'super_admin' && (
+                  {userRole === "super_admin" && (
                     <>
                       <Link
                         to="/super-admin/academies"
@@ -398,11 +493,13 @@ const Navbar = () => {
                         className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
                       >
                         <FaChartBar className="w-5 h-5 text-gray-400" />
-                        <span className="font-medium">Reports &amp; billing</span>
+                        <span className="font-medium">
+                          Reports &amp; billing
+                        </span>
                       </Link>
                     </>
                   )}
-                  {userRole === 'academy_owner' && (
+                  {userRole === "academy_owner" && (
                     <Link
                       to="/academy/subscription"
                       className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
@@ -423,12 +520,18 @@ const Navbar = () => {
                         <FaUser className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-sm font-medium text-gray-800">{getUserDisplayName()}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">{user.email}</div>
+                        <div className="text-sm font-medium text-gray-800">
+                          {getUserDisplayName()}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          {user.email}
+                        </div>
                         {userRole && (
                           <div className="mt-1.5">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary-700">
-                              {userRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              {userRole
+                                .replace("_", " ")
+                                .replace(/\b\w/g, (l) => l.toUpperCase())}
                             </span>
                           </div>
                         )}
@@ -436,7 +539,7 @@ const Navbar = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    {userRole === 'academy_owner' && (
+                    {userRole === "academy_owner" && (
                       <Link
                         to="/academy/subscription"
                         className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
@@ -445,14 +548,16 @@ const Navbar = () => {
                         <span className="font-medium">Manage Subscription</span>
                       </Link>
                     )}
-                    {userRole === 'super_admin' && (
+                    {userRole === "super_admin" && (
                       <>
                         <Link
                           to="/super-admin/academies"
                           className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
                         >
                           <FaGraduationCap className="w-5 h-5 text-gray-400" />
-                          <span className="font-medium">Academy management</span>
+                          <span className="font-medium">
+                            Academy management
+                          </span>
                         </Link>
                         <Link
                           to="/super-admin/users"
@@ -473,10 +578,23 @@ const Navbar = () => {
                           className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200"
                         >
                           <FaChartBar className="w-5 h-5 text-gray-400" />
-                          <span className="font-medium">Reports &amp; billing</span>
+                          <span className="font-medium">
+                            Reports &amp; billing
+                          </span>
                         </Link>
                       </>
                     )}
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setProfileDropdown(false);
+                        setShowChangePassword(true);
+                      }}
+                      className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-gray-700 hover:text-primary-600 hover:bg-gray-50 transition-all duration-200 w-full text-left"
+                    >
+                      <FaLock className="w-5 h-5 text-gray-400" />
+                      <span className="font-medium">Change password</span>
+                    </button>
                     <button
                       onClick={signOut}
                       className="flex items-center space-x-3 px-3 py-2.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 w-full text-left"
@@ -507,6 +625,10 @@ const Navbar = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <ChangePasswordModal
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </motion.nav>
   );
 };

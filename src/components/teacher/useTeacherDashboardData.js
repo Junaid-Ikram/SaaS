@@ -10,6 +10,12 @@ const DEFAULT_FILTERS = {
   to: "",
 };
 
+const DEFAULT_STUDENT_FILTERS = {
+  status: "APPROVED",
+  search: "",
+  academyId: "active",
+};
+
 const toLocaleDateTime = (value) => {
   if (!value) return "-";
   const date = new Date(value);
@@ -42,7 +48,10 @@ const useTeacherDashboardData = () => {
   const [classes, setClasses] = useState([]);
   const [classesMeta, setClassesMeta] = useState(null);
   const [students, setStudents] = useState([]);
+  const [studentsMeta, setStudentsMeta] = useState(null);
+  const [studentsSummary, setStudentsSummary] = useState(null);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [studentFilters, setStudentFilters] = useState(DEFAULT_STUDENT_FILTERS);
   const [selectedAcademyId, setSelectedAcademyId] = useState(null);
 
   useEffect(() => {
@@ -98,6 +107,8 @@ const useTeacherDashboardData = () => {
       setClasses([]);
       setClassesMeta(null);
       setStudents([]);
+      setStudentsMeta(null);
+      setStudentsSummary(null);
       setLoading(false);
       return;
     }
@@ -133,10 +144,21 @@ const useTeacherDashboardData = () => {
       const studentParams = new URLSearchParams({
         limit: "100",
         page: "1",
-        status: "APPROVED",
       });
-      if (activeAcademyId) {
-        studentParams.append("academyId", activeAcademyId);
+      if (studentFilters.status) {
+        studentParams.append("status", studentFilters.status.toUpperCase());
+      }
+      if (studentFilters.search.trim()) {
+        studentParams.append("search", studentFilters.search.trim());
+      }
+      const resolvedStudentAcademyId =
+        studentFilters.academyId === "active"
+          ? activeAcademyId
+          : studentFilters.academyId && studentFilters.academyId !== "all"
+          ? studentFilters.academyId
+          : null;
+      if (resolvedStudentAcademyId) {
+        studentParams.append("academyId", resolvedStudentAcademyId);
       }
 
       const [classesResponse, studentsResponse] = await Promise.all([
@@ -148,19 +170,34 @@ const useTeacherDashboardData = () => {
       setClasses(mappedClasses);
       setClassesMeta(classesResponse?.meta ?? null);
 
-      const mappedStudents = (studentsResponse?.data ?? []).map((student) => ({
-        id: student.id,
-        name:
-          `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() ||
-          student.email,
-        email: student.email,
-        status: student.status,
-        joined: toLocaleDateTime(student.createdAt),
-      }));
+      const mappedStudents = (studentsResponse?.data ?? []).map((student) => {
+        const academies = Array.isArray(student.academies)
+          ? student.academies
+          : [];
+        const approvedAcademyNames = academies
+          .filter((academy) => academy.status === "APPROVED")
+          .map((academy) => academy.academyName ?? "Unnamed Academy");
+
+        return {
+          id: student.id,
+          name:
+            `${student.firstName ?? ""} ${student.lastName ?? ""}`.trim() ||
+            student.email,
+          email: student.email,
+          status: student.status,
+          joined: toLocaleDateTime(student.createdAt),
+          academies: approvedAcademyNames,
+        };
+      });
       setStudents(mappedStudents);
+      setStudentsMeta(studentsResponse?.meta ?? null);
+      setStudentsSummary(studentsResponse?.summary ?? null);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Unable to load dashboard data.";
+      setStudents([]);
+      setStudentsMeta(null);
+      setStudentsSummary(null);
       setError(message);
       showToast({
         status: "error",
@@ -170,7 +207,7 @@ const useTeacherDashboardData = () => {
     } finally {
       setLoading(false);
     }
-  }, [academyMemberships, activeAcademyId, filters, showToast, userId]);
+  }, [academyMemberships, activeAcademyId, filters, showToast, studentFilters, userId]);
 
   useEffect(() => {
     load();
@@ -181,6 +218,17 @@ const useTeacherDashboardData = () => {
       ...prev,
       ...updates,
     }));
+  }, []);
+
+  const updateStudentFilters = useCallback((updates) => {
+    setStudentFilters((prev) => ({
+      ...prev,
+      ...updates,
+    }));
+  }, []);
+
+  const resetStudentFilters = useCallback(() => {
+    setStudentFilters(DEFAULT_STUDENT_FILTERS);
   }, []);
 
   const createClass = useCallback(
@@ -293,8 +341,13 @@ const useTeacherDashboardData = () => {
     classes,
     classesMeta,
     students,
+    studentsMeta,
+    studentsSummary,
+    studentFilters,
     filters,
     setFilters: updateFilters,
+    setStudentFilters: updateStudentFilters,
+    resetStudentFilters,
     metrics,
     refresh: load,
     createClass,

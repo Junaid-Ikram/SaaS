@@ -1,10 +1,43 @@
 ﻿const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
+const ASSET_BASE_URL = (import.meta.env.VITE_ASSET_BASE_URL ?? '').replace(/\/$/, '');
 
 const ACCESS_TOKEN_KEY = 'qedu_access_token';
 const REFRESH_TOKEN_KEY = 'qedu_refresh_token';
 const USER_KEY = 'qedu_user';
 
 const isBrowser = typeof window !== 'undefined';
+
+export const resolveAssetUrl = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return value;
+  }
+
+  const normalisedValue = value.startsWith('/') ? value : `/${value}`;
+
+  const baseCandidates = [];
+  if (ASSET_BASE_URL) {
+    baseCandidates.push(ASSET_BASE_URL);
+  }
+
+  if (API_BASE_URL) {
+    if (/^\/?storage\//i.test(normalisedValue) && /\/api$/i.test(API_BASE_URL)) {
+      baseCandidates.push(API_BASE_URL.replace(/\/api$/i, ''));
+    } else {
+      baseCandidates.push(API_BASE_URL);
+    }
+  }
+
+  const base = baseCandidates.find(Boolean);
+  if (base) {
+    return `${base}${normalisedValue}`;
+  }
+
+  return normalisedValue;
+};
 
 const readStorage = (key) => {
   if (!isBrowser) return null;
@@ -199,3 +232,4 @@ export const logoutFromServer = async (refreshTokenOverride) => {
 };
 
 export default apiRequest;
+

@@ -59,14 +59,25 @@ const useStudentDashboardData = () => {
 
     try {
       const classParams = new URLSearchParams({ limit: '50', page: '1', academyId: activeAcademyId });
-      const teacherParams = new URLSearchParams({ limit: '100', page: '1', status: 'APPROVED', academyId: activeAcademyId });
+      const teacherParams = new URLSearchParams({ limit: '100', page: '1', status: 'APPROVED' });
       const [classResponse, teachersResponse] = await Promise.all([
         apiRequest(`/classes?${classParams.toString()}`),
         apiRequest(`/users/teachers?${teacherParams.toString()}`),
       ]);
 
       const fetchedClasses = (classResponse?.data ?? []).map(mapClass);
-      const fetchedTeachers = (teachersResponse?.data ?? []).map((teacher) => ({
+      const rawTeachers = Array.isArray(teachersResponse?.data) ? teachersResponse.data : [];
+      const filteredTeachers = rawTeachers.filter((teacher) => {
+        if (!Array.isArray(teacher.academyMemberships) || !activeAcademyId) {
+          return true;
+        }
+        return teacher.academyMemberships.some(
+          (membership) =>
+            membership.academyId === activeAcademyId && membership.status === 'APPROVED',
+        );
+      });
+
+      const fetchedTeachers = filteredTeachers.map((teacher) => ({
         id: teacher.id,
         name: `${teacher.firstName ?? ''} ${teacher.lastName ?? ''}`.trim() || teacher.email,
         email: teacher.email,
@@ -104,3 +115,4 @@ const useStudentDashboardData = () => {
 };
 
 export default useStudentDashboardData;
+

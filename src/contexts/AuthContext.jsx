@@ -5,6 +5,7 @@ import apiRequest, {
   logoutFromServer,
   refreshAuthSession,
   saveSession,
+  resolveAssetUrl,
 } from '../utils/apiClient';
 
 const AuthContext = createContext();
@@ -14,13 +15,27 @@ const normalizeRole = (role) => {
   return role.toLowerCase();
 };
 
-const buildUserDetails = (user) => {
-  if (!user) return null;
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ').trim();
+const normaliseUserProfile = (user) => {
+  if (!user) {
+    return null;
+  }
+
+  const profilePhotoUrl = resolveAssetUrl(user.profilePhotoUrl) ?? null;
+
   return {
     ...user,
-    name: fullName || user.email,
-    full_name: fullName || user.email,
+    profilePhotoUrl,
+  };
+};
+
+const buildUserDetails = (user) => {
+  const normalised = normaliseUserProfile(user);
+  if (!normalised) return null;
+  const fullName = [normalised.firstName, normalised.lastName].filter(Boolean).join(' ').trim();
+  return {
+    ...normalised,
+    name: fullName || normalised.email,
+    full_name: fullName || normalised.email,
   };
 };
 
@@ -69,6 +84,7 @@ export function AuthProvider({ children }) {
   const [academyMemberships, setAcademyMemberships] = useState([]);
   const [pendingAcademyRequests, setPendingAcademyRequests] = useState([]);
   const [ownerAcademy, setOwnerAcademy] = useState(null);
+  const [ownerAcademyStatus, setOwnerAcademyStatus] = useState('unknown');
   const [academyLimits, setAcademyLimits] = useState({ teacher: null, student: null });
   const [loadingAcademies, setLoadingAcademies] = useState(false);
 
@@ -85,7 +101,7 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    const nextUser = session.user;
+    const nextUser = normaliseUserProfile(session.user);
     setUser(nextUser);
     setUserDetails(buildUserDetails(nextUser));
     setUserRole(normalizeRole(nextUser.role));
@@ -135,6 +151,7 @@ export function AuthProvider({ children }) {
       setAcademyMemberships([]);
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
+      setOwnerAcademyStatus('unknown');
       return { success: true, memberships: [] };
     }
 
@@ -148,11 +165,13 @@ export function AuthProvider({ children }) {
       ).catch(() => null);
       const ownerPromise =
         userRole === 'academy_owner'
-          ? apiRequest('/academies/owner').catch(() => null)
-          : Promise.resolve(null);
+          ? apiRequest('/academies/owner')
+              .then((data) => ({ data }))
+              .catch((error) => ({ error }))
+          : Promise.resolve({ data: null });
       const platformSettingsPromise = apiRequest('/platform-settings').catch(() => null);
 
-      const [approvedMemberships, pendingMemberships, ownerDetails, platformSettings] =
+      const [approvedMemberships, pendingMemberships, ownerResult, platformSettings] =
         await Promise.all([
           approvedMembershipPromise,
           pendingMembershipPromise,
@@ -167,9 +186,25 @@ export function AuthProvider({ children }) {
         ? pendingMemberships.data
         : [];
 
+      let resolvedOwner = null;
+      let academyStatus = userRole === 'academy_owner' ? 'missing' : 'not_required';
+      if (userRole === 'academy_owner') {
+        if (ownerResult?.data) {
+          resolvedOwner = ownerResult.data;
+          const resolvedStatus = (ownerResult.data.status ?? 'pending').toLowerCase();
+          academyStatus = ownerResult.data.profileCompleted ? resolvedStatus : 'missing';
+        } else if (ownerResult?.error?.response?.status === 404) {
+          academyStatus = 'missing';
+        } else if (ownerResult?.error) {
+          console.error('Failed to fetch owner academy', ownerResult.error);
+          academyStatus = 'unknown';
+        }
+      }
+
       setAcademyMemberships(approvedList);
       setPendingAcademyRequests(pendingList);
-      setOwnerAcademy(ownerDetails ?? null);
+      setOwnerAcademy(resolvedOwner);
+      setOwnerAcademyStatus(academyStatus);
       if (platformSettings) {
         setAcademyLimits({
           teacher: platformSettings.maxAcademiesPerTeacher ?? null,
@@ -183,6 +218,7 @@ export function AuthProvider({ children }) {
       setAcademyMemberships([]);
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
+      setOwnerAcademyStatus('unknown');
       return { success: false, error };
     } finally {
       setLoadingAcademies(false);
@@ -194,6 +230,7 @@ export function AuthProvider({ children }) {
       setAcademyMemberships([]);
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
+      setOwnerAcademyStatus('unknown');
       return;
     }
     loadAcademiesContext();
@@ -211,10 +248,14 @@ export function AuthProvider({ children }) {
         });
 
         if (data?.accessToken && data?.refreshToken && data?.user) {
-          saveSession(data);
-          applySession(data);
+          const payload = {
+            ...data,
+            user: normaliseUserProfile(data.user),
+          };
+          saveSession(payload);
+          applySession(payload);
           setLoading(false);
-          return { data, error: null };
+          return { data: payload, error: null };
         }
 
         throw new Error('Unexpected login response format');
@@ -319,20 +360,26 @@ export function AuthProvider({ children }) {
   }, []);
 
   const fetchUserDetails = useCallback(async () => {
-    if (!user?.id) return null;
-
     try {
-      const latest = await apiRequest(`/users/${user.id}`);
-      const session = { user: latest };
-      saveSession({ ...getStoredSession(), user: latest });
-      applySession(session);
+      const latest = await apiRequest('/users/me');
+      if (!latest) {
+        return null;
+      }
+      const normalised = normaliseUserProfile(latest);
+      const stored = getStoredSession();
+      saveSession({
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken,
+        user: normalised,
+      });
+      applySession({ user: normalised });
       await loadAcademiesContext();
-      return latest;
+      return normalised;
     } catch (error) {
       console.error('Failed to fetch user details', error);
       return null;
     }
-  }, [applySession, loadAcademiesContext, user?.id]);
+  }, [applySession, loadAcademiesContext]);
 
   const fetchAcademies = useCallback(async ({ search = '', page = 1, limit = 20 } = {}) => {
     try {
@@ -376,6 +423,53 @@ export function AuthProvider({ children }) {
     [loadAcademiesContext],
   );
 
+  const withdrawAcademyMembership = useCallback(
+    async (membershipId) => {
+      if (!membershipId) {
+        return { success: false, error: 'Membership identifier is required.' };
+      }
+
+      try {
+        await apiRequest(`/academies/memberships/${membershipId}`, {
+          method: 'DELETE',
+        });
+        await loadAcademiesContext();
+        return { success: true };
+      } catch (error) {
+        console.error('withdrawAcademyMembership failed', error);
+        return { success: false, error };
+      }
+    },
+    [loadAcademiesContext],
+  );
+
+  const submitAcademyOnboarding = useCallback(
+    async ({ name, description }) => {
+      if (!name || !name.trim()) {
+        return { success: false, error: new Error('Academy name is required.') };
+      }
+      try {
+        const payload = {
+          name: name.trim(),
+          description: description?.trim() || undefined,
+        };
+        const data = await apiRequest('/academies/owner/onboarding', {
+          method: 'POST',
+          body: payload,
+        });
+        const nextStatus = (data?.status ?? 'pending').toLowerCase();
+        setOwnerAcademy(data);
+        setOwnerAcademyStatus(nextStatus);
+        await loadAcademiesContext();
+        return { success: true, data };
+      } catch (error) {
+        console.error('submitAcademyOnboarding failed', error);
+        return { success: false, error };
+      }
+    },
+    [loadAcademiesContext],
+  );
+
   const signOut = useCallback(async () => {
     try {
       const { refreshToken } = getStoredSession();
@@ -385,6 +479,7 @@ export function AuthProvider({ children }) {
       setAcademyMemberships([]);
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
+      setOwnerAcademyStatus('unknown');
       setAcademyLimits({ teacher: null, student: null });
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
@@ -403,6 +498,7 @@ export function AuthProvider({ children }) {
     academyMemberships,
     pendingAcademyRequests,
     ownerAcademy,
+    ownerAcademyStatus,
     academyLimits,
     loadingAcademies,
     refreshAcademyContext: loadAcademiesContext,
@@ -413,6 +509,8 @@ export function AuthProvider({ children }) {
     resendRegistrationOtp,
     fetchAcademies,
     requestAcademyMembership,
+    withdrawAcademyMembership,
+    submitAcademyOnboarding,
     fetchUserDetails,
     signIn,
     signOut,
@@ -422,3 +520,7 @@ export function AuthProvider({ children }) {
 }
 
 export const useAuth = () => useContext(AuthContext);
+
+
+
+

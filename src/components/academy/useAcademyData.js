@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
-import apiRequest from "../../utils/apiClient";
+import apiRequest, { resolveAssetUrl } from "../../utils/apiClient";
 import { mapResourceRecord } from "../../utils/resourceTransforms";
 
 const EMPTY_SUBSCRIPTION_USAGE = {
@@ -198,17 +198,33 @@ const useAcademyData = () => {
   }, [user]);
 
   const mapPendingMembershipRecord = useCallback(
-    (membership) => ({
-      id: membership.id,
-      membershipId: membership.id,
-      userId: membership.userId,
-      name: buildDisplayName(membership.user ?? {}),
-      email: membership.user?.email ?? "",
-      role: normaliseRole(membership.role),
-      status: membership.status,
-      requestDate: safeLocaleDate(membership.requestedAt),
-      reason: membership.reason ?? "",
-    }),
+    (membership) => {
+      const user = membership.user ?? {};
+      const profilePhotoUrl = resolveAssetUrl(user.profilePhotoUrl) ?? null;
+      return {
+        id: membership.id,
+        membershipId: membership.id,
+        userId: membership.userId,
+        name: buildDisplayName(user),
+        firstName: user.firstName ?? "",
+        lastName: user.lastName ?? "",
+        email: user.email ?? "",
+        role: normaliseRole(membership.role),
+        status: membership.status,
+        requestDate: safeLocaleDate(membership.requestedAt),
+        reason: membership.reason ?? "",
+        phoneNumber: user.phoneNumber ?? "",
+        gender: user.gender ?? "",
+        bio: user.bio ?? "",
+        dateOfBirth: user.dateOfBirth ? safeLocaleDate(user.dateOfBirth) : "",
+        addressStreet: user.addressStreet ?? "",
+        addressHouse: user.addressHouse ?? "",
+        addressCity: user.addressCity ?? "",
+        addressState: user.addressState ?? "",
+        addressCountry: user.addressCountry ?? "",
+        avatarUrl: profilePhotoUrl,
+      };
+    },
     [],
   );
 
@@ -324,10 +340,13 @@ const useAcademyData = () => {
 
       const buildMemberRecord = (membership, role) => {
         const user = membership.user ?? {};
+        const profilePhotoUrl = resolveAssetUrl(user.profilePhotoUrl) ?? null;
         return {
           id: user.id ?? membership.id,
           membershipId: membership.id,
           name: buildDisplayName(user),
+          firstName: user.firstName ?? "",
+          lastName: user.lastName ?? "",
           email: user.email ?? "",
           role: role.toLowerCase(),
           status: user.status ?? membership.status,
@@ -341,6 +360,15 @@ const useAcademyData = () => {
           enrolledClasses:
             role === "STUDENT" ? user._count?.classParticipants ?? 0 : undefined,
           phoneNumber: user.phoneNumber ?? "",
+          gender: user.gender ?? "",
+          bio: user.bio ?? "",
+          dateOfBirth: user.dateOfBirth ? safeLocaleDate(user.dateOfBirth) : "",
+          addressStreet: user.addressStreet ?? "",
+          addressHouse: user.addressHouse ?? "",
+          addressCity: user.addressCity ?? "",
+          addressState: user.addressState ?? "",
+          addressCountry: user.addressCountry ?? "",
+          avatarUrl: profilePhotoUrl,
         };
       };
 
