@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Import custom hooks
 import useWindowSize from "./useWindowSize";
@@ -13,9 +14,9 @@ import TabContent from "./TabContent";
 
 // Import animation variants
 import { contentVariants } from "./animationVariants";
+import OwnerOnboardingGate from "./OwnerOnboardingGate";
 
 const AcademyDashboard = () => {
-  // State for UI
   const [activeTab, setActiveTab] = useState("overview");
   const [activeSubTab, setActiveSubTab] = useState("upcoming");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -41,7 +42,10 @@ const AcademyDashboard = () => {
     }
   };
 
-  // Load academy dashboard data
+  const { userRole, ownerAcademyStatus } = useAuth();
+  const shouldShowOnboardingGate =
+    userRole === "academy_owner" && ownerAcademyStatus !== "approved";
+
   const {
     loading: dashboardLoading,
     error: dashboardError,
@@ -68,6 +72,7 @@ const AcademyDashboard = () => {
     subscriptionUsage,
     approvePendingUser,
     rejectPendingUser,
+    revokeMembership,
     purchaseCredits,
     uploadResource,
     updateResource,
@@ -76,6 +81,7 @@ const AcademyDashboard = () => {
     setNotifications,
     setUnreadNotifications,
   } = useAcademyData();
+
   const {
     settings: academySettings,
     loading: academySettingsLoading,
@@ -85,11 +91,10 @@ const AcademyDashboard = () => {
     update: updateAcademySettings,
   } = useAcademySettings();
 
-  // Derived data
-  const teacherCount = teachersSummary?.approved ?? teachers.length;
-  const studentCount = studentsSummary?.approved ?? students.length;
+  if (shouldShowOnboardingGate) {
+    return <OwnerOnboardingGate />;
+  }
 
-  // Determine content variant based on sidebar state and mobile view
   const getContentVariant = () => {
     if (isMobile) {
       return "full";
@@ -102,17 +107,17 @@ const AcademyDashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-600">
-            Loading academy dashboard...
-          </p>
+          <p className="mt-4 text-lg text-gray-600">Loading academy dashboard...</p>
         </div>
       </div>
     );
   }
 
+  const teacherCount = teachersSummary?.approved ?? teachers.length;
+  const studentCount = studentsSummary?.approved ?? students.length;
+
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* Sidebar */}
       <Sidebar
         academyData={academyData}
         activeTab={activeTab}
@@ -123,15 +128,14 @@ const AcademyDashboard = () => {
         unreadNotifications={unreadNotifications}
       />
 
-      {/* Main content */}
       <motion.main
         className="min-h-screen px-4 pb-10 pt-6 transition-all duration-300 overflow-x-hidden sm:px-6 lg:px-8"
         variants={contentVariants}
         animate={getContentVariant()}
         initial={isMobile ? "full" : "open"}
       >
-        {/* Dashboard header */}
         <DashboardHeader academyData={academyData} />
+
         {dashboardError && (
           <div className="mb-6 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -147,7 +151,6 @@ const AcademyDashboard = () => {
           </div>
         )}
 
-        {/* Tab content */}
         <TabContent
           activeTab={activeTab}
           teacherCount={teacherCount}
@@ -167,6 +170,7 @@ const AcademyDashboard = () => {
           pendingUsers={pendingUsers}
           onApproveUser={approvePendingUser}
           onRejectUser={rejectPendingUser}
+          onRevokeUser={revokeMembership}
           onPurchaseCredits={purchaseCredits}
           requestedUsersTab={requestedUsersTab}
           onNavigateTab={navigateToTab}
@@ -191,8 +195,6 @@ const AcademyDashboard = () => {
           setActiveSubTab={setActiveSubTab}
         />
       </motion.main>
-
-      {/* Class details modal */}
     </div>
   );
 };

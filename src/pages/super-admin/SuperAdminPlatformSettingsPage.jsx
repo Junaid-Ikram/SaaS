@@ -1,7 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import SuperAdminLayout from "../../components/super-admin/SuperAdminLayout";
 import apiRequest from "../../utils/apiClient";
 
+const DEFAULT_SETTINGS = {
+  sessionTimeoutMinutes: 60,
+  zoomCreditLowThreshold: 100,
+  maxConcurrentClasses: 12,
+  dailyDigestEmail: true,
+  supportEmail: "support@qedu.io",
+  maxAcademiesPerTeacher: 3,
+  maxAcademiesPerStudent: 1,
+};
 const SETTINGS_METADATA = [
   {
     key: "sessionTimeoutMinutes",
@@ -43,6 +53,24 @@ const SETTINGS_METADATA = [
     description: "Primary email address displayed to end-users for help.",
     type: "email",
   },
+  {
+    key: "maxAcademiesPerTeacher",
+    label: "Max academies per teacher",
+    description:
+      "Limit the number of academies a teacher can join (0 for unlimited).",
+    type: "number",
+    min: 0,
+    max: 50,
+  },
+  {
+    key: "maxAcademiesPerStudent",
+    label: "Max academies per student",
+    description:
+      "Limit the number of academies a student can join (0 for unlimited).",
+    type: "number",
+    min: 0,
+    max: 50,
+  },
 ];
 
 const SuperAdminPlatformSettingsPage = () => {
@@ -61,8 +89,9 @@ const SuperAdminPlatformSettingsPage = () => {
       try {
         const result = await apiRequest("/platform-settings");
         if (!active) return;
-        setInitialValues(result);
-        setFormValues(result);
+        const normalised = { ...DEFAULT_SETTINGS, ...(result ?? {}) };
+        setInitialValues(normalised);
+        setFormValues(normalised);
         setError(null);
       } catch (err) {
         console.error("Failed to load platform settings", err);
@@ -129,8 +158,9 @@ const SuperAdminPlatformSettingsPage = () => {
         method: "PATCH",
         body: updates,
       });
-      setInitialValues(updated);
-      setFormValues(updated);
+      const normalised = { ...DEFAULT_SETTINGS, ...(updated ?? {}) };
+      setInitialValues(normalised);
+      setFormValues(normalised);
       setSuccessMessage("Settings saved successfully.");
       setError(null);
     } catch (err) {
@@ -294,3 +324,7 @@ const SuperAdminPlatformSettingsPage = () => {
 };
 
 export default SuperAdminPlatformSettingsPage;
+
+
+
+

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+ï»¿import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   FaSearch,
@@ -17,6 +18,54 @@ const emptyListMessage = {
 const toSearchableString = (value) => (value ?? '').toLowerCase();
 
 const SUMMARY_TEMPLATE = { approved: 0, pending: 0, rejected: 0, inactive: 0 };
+
+const MODAL_SIZES = {
+  sm: "max-w-sm",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+};
+
+const Modal = ({ open, onClose, title, children, footer, size = "md" }) => {
+  if (!open || typeof document === 'undefined') {
+    return null;
+  }
+
+  const sizeClass = MODAL_SIZES[size] ?? MODAL_SIZES.md;
+
+  const handleBackdropClick = (event) => {
+    if (event.target === event.currentTarget) {
+      onClose?.();
+    }
+  };
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onMouseDown={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className={`w-full ${sizeClass} rounded-xl bg-white p-6 shadow-xl`}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+          >
+            Close
+          </button>
+        </div>
+        <div className="mt-4 space-y-4">{children}</div>
+        {footer ? <div className="mt-6 flex justify-end gap-3">{footer}</div> : null}
+      </div>
+    </div>,
+    document.body,
+  );
+};
 
 const UsersTab = ({
   teachers = [],
@@ -37,6 +86,7 @@ const UsersTab = ({
   const [actionError, setActionError] = useState(null);
   const [actionSuccess, setActionSuccess] = useState(null);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [userPendingAction, setUserPendingAction] = useState(null);
   const [pendingActionType, setPendingActionType] = useState('reject');
@@ -46,10 +96,10 @@ const UsersTab = ({
     if (!normalised) {
       return;
     }
-    if (['teachers', 'students', 'pending'].includes(normalised) && normalised !== activeSubTab) {
+    if (['teachers', 'students', 'pending'].includes(normalised)) {
       setActiveSubTab(normalised);
     }
-  }, [initialSubTab, activeSubTab]);
+  }, [initialSubTab]);
 
   const teacherStats = teacherSummary ?? SUMMARY_TEMPLATE;
   const studentStats = studentSummary ?? SUMMARY_TEMPLATE;
@@ -103,20 +153,41 @@ const UsersTab = ({
     setShowUserModal(true);
   };
 
-  const handleApprove = async (user) => {
+  const handleApprove = (user) => {
     if (!onApproveUser || !user?.id) {
+      return;
+    }
+
+    setActionError(null);
+    setActionSuccess(null);
+    setPendingActionType('approve');
+    setUserPendingAction(user);
+    setConfirmModalOpen(true);
+  };
+
+  const closeApproveModal = () => {
+    setConfirmModalOpen(false);
+    setUserPendingAction(null);
+    setActionLoadingId(null);
+    setActionError(null);
+    setPendingActionType((prev) => (prev === 'approve' ? 'reject' : prev));
+  };
+
+  const submitApprove = async () => {
+    if (!onApproveUser || !userPendingAction?.id) {
       return;
     }
 
     try {
       setActionError(null);
       setActionSuccess(null);
-      setActionLoadingId(user.id);
-      const result = await onApproveUser(user.id);
+      setActionLoadingId(userPendingAction.id);
+      const result = await onApproveUser(userPendingAction.id);
       if (result?.success === false) {
         setActionError(result.error ?? 'Unable to approve user.');
       } else {
         setActionSuccess('User approved successfully.');
+        closeApproveModal();
       }
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to approve user.');
@@ -139,12 +210,26 @@ const UsersTab = ({
     setRejectModalOpen(true);
   };
 
+  const handleRevoke = (user) => {
+    if (!onRevokeUser || !user?.membershipId) {
+      return;
+    }
+
+    setActionError(null);
+    setActionSuccess(null);
+    setRejectReason('');
+    setPendingActionType('revoke');
+    setUserPendingAction(user);
+    setRejectModalOpen(true);
+  };
+
   const closeRejectModal = () => {
     setRejectModalOpen(false);
     setRejectReason('');
     setUserPendingAction(null);
     setActionLoadingId(null);
     setActionError(null);
+    setPendingActionType('reject');
   };
 
   const submitReject = async () => {
@@ -229,7 +314,7 @@ const UsersTab = ({
                         <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{teacher.email}</p>
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${teacher.joinDate ?? '—'}`, `${teacher.classes ?? 0} classes`)}
+                        {renderStatsRow(`Joined ${teacher.joinDate ?? 'â€”'}`, `${teacher.classes ?? 0} classes`)}
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
@@ -274,7 +359,7 @@ const UsersTab = ({
                         <p className="ml-1 flex-shrink-0 font-normal text-gray-500">{student.email}</p>
                       </div>
                       <div className="mt-2 text-sm text-gray-500">
-                        {renderStatsRow(`Joined ${student.joinDate ?? '—'}`, `${student.enrolledClasses ?? 0} classes`)}
+                        {renderStatsRow(`Joined ${student.joinDate ?? 'â€”'}`, `${student.enrolledClasses ?? 0} classes`)}
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
@@ -322,7 +407,7 @@ const UsersTab = ({
                         </div>
                         <div className="mt-2 text-sm text-gray-500">
                           {renderStatsRow(
-                            `Requested ${user.requestDate ?? '—'}`,
+                            `Requested ${user.requestDate ?? 'â€”'}`,
                             `Role: ${(user.role ?? '').replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`,
                           )}
                         </div>
@@ -335,7 +420,7 @@ const UsersTab = ({
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60"
                           >
                             <FaUserCheck className="mr-1" />
-                            {isProcessing ? 'Processing…' : 'Approve'}
+                            {isProcessing ? 'Processingâ€¦' : 'Approve'}
                           </button>
                           <button
                             onClick={() => handleReject(user)}
@@ -343,7 +428,7 @@ const UsersTab = ({
                             className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-60"
                           >
                             <FaUserTimes className="mr-1" />
-                            {isProcessing ? 'Processing…' : 'Reject'}
+                            {isProcessing ? 'Processingâ€¦' : 'Reject'}
                           </button>
                         </div>
                       </div>
@@ -457,46 +542,93 @@ const UsersTab = ({
       {activeSubTab === 'students' && renderStudents()}
       {activeSubTab === 'pending' && renderPending()}
 
-      {rejectModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 px-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {pendingActionType === 'revoke' ? 'Revoke Access' : 'Reject Application'}
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Provide a reason for {pendingActionType === 'revoke' ? 'revoking access' : 'rejecting'} {userPendingAction?.name ?? 'this user'}.
-            </p>
-            <textarea
-              className="mt-4 w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              rows={4}
-              value={rejectReason}
-              onChange={(event) => setRejectReason(event.target.value)}
-              placeholder={pendingActionType === 'revoke' ? 'Reason for revocation' : 'Reason for rejection'}
-            />
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeRejectModal}
-                className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={submitReject}
-                disabled={actionLoadingId === userPendingAction?.id}
-                className={`inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white ${
-                  actionLoadingId === userPendingAction?.id
-                    ? 'bg-red-300 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {actionLoadingId === userPendingAction?.id ? 'Rejecting...' : 'Reject'}
-              </button>
-            </div>
-          </div>
+      <Modal
+        open={confirmModalOpen}
+        onClose={closeApproveModal}
+        title="Approve user?"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={closeApproveModal}
+              className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              disabled={actionLoadingId === userPendingAction?.id}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submitApprove}
+              disabled={actionLoadingId === userPendingAction?.id}
+              className={`inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white ${
+                actionLoadingId === userPendingAction?.id
+                  ? 'bg-emerald-300 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              }`}
+            >
+              {actionLoadingId === userPendingAction?.id ? 'Approving...' : 'Approve'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-700">
+          Approve {userPendingAction?.name ?? 'this user'} to join your academy?
+        </p>
+        <p className="text-xs text-gray-500">
+          Approved users will gain immediate access to relevant resources and notifications.
+        </p>
+      </Modal>
+
+      <Modal
+        open={rejectModalOpen}
+        onClose={closeRejectModal}
+        title={pendingActionType === 'revoke' ? 'Revoke Access' : 'Reject Application'}
+        size="md"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={closeRejectModal}
+              className="inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              disabled={actionLoadingId === userPendingAction?.id}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={submitReject}
+              disabled={actionLoadingId === userPendingAction?.id}
+              className={`inline-flex items-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white ${
+                actionLoadingId === userPendingAction?.id
+                  ? 'bg-red-300 cursor-not-allowed'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {actionLoadingId === userPendingAction?.id
+                ? pendingActionType === 'revoke'
+                  ? 'Revoking...'
+                  : 'Rejecting...'
+                : pendingActionType === 'revoke'
+                  ? 'Revoke'
+                  : 'Reject'}
+            </button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600">
+            Provide a reason for {pendingActionType === 'revoke' ? 'revoking access' : 'rejecting'} {userPendingAction?.name ?? 'this user'}.
+          </p>
+          <textarea
+            className="w-full rounded-md border border-gray-300 p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            rows={4}
+            value={rejectReason}
+            onChange={(event) => setRejectReason(event.target.value)}
+            placeholder={pendingActionType === 'revoke' ? 'Reason for revocation' : 'Reason for rejection'}
+          />
         </div>
-      )}
+      </Modal>
 
       {showUserModal && selectedUser && (
         <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -541,6 +673,7 @@ const UsersTab = ({
 };
 
 export default UsersTab;
+
 
 
 

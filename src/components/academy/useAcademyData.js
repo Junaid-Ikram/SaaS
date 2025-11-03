@@ -132,6 +132,16 @@ const mapTransactionRecord = (record) => {
   };
 };
 
+const mapPaymentRecord = (payment) => ({
+  id: payment.id,
+  amount: payment.amount,
+  status: payment.status,
+  currency: payment.currency ?? "USD",
+  provider: payment.provider ?? "Unknown",
+  reference: payment.reference ?? "",
+  createdAt: payment.createdAt ?? new Date().toISOString(),
+});
+
 const useAcademyData = () => {
   const { user, refreshAcademyContext } = useAuth();
   const { showToast } = useToast();
@@ -186,34 +196,6 @@ const useAcademyData = () => {
     const name = `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim();
     return name ? `${name}'s Academy` : "Your Academy";
   }, [user]);
-
-  const mapTeacherRecord = useCallback(
-    (teacher) => ({
-      id: teacher.id,
-      name: buildDisplayName(teacher),
-      email: teacher.email,
-      role: normaliseRole(teacher.role),
-      status: teacher.status,
-      joinDate: safeLocaleDate(teacher.createdAt),
-      classes: teacher._count?.teachingClasses ?? 0,
-      phoneNumber: teacher.phoneNumber ?? "",
-    }),
-    [],
-  );
-
-  const mapStudentRecord = useCallback(
-    (student) => ({
-      id: student.id,
-      name: buildDisplayName(student),
-      email: student.email,
-      role: normaliseRole(student.role),
-      status: student.status,
-      joinDate: safeLocaleDate(student.createdAt),
-      enrolledClasses: student._count?.classParticipants ?? 0,
-      phoneNumber: student.phoneNumber ?? "",
-    }),
-    [],
-  );
 
   const mapPendingMembershipRecord = useCallback(
     (membership) => ({
@@ -326,71 +308,99 @@ const useAcademyData = () => {
 
   const loadUserCollections = useCallback(async () => {
     try {
-      const [
-        teachersApprovedResponse,
-        studentsApprovedResponse,
-        pendingMembershipsResponse,
-        approvedMembershipsResponse,
-      ] = await Promise.all([
-        apiRequest("/users/teachers?limit=100&page=1&status=APPROVED"),
-        apiRequest("/users/students?limit=100&page=1&status=APPROVED"),
-        apiRequest("/academies/owner/memberships?limit=100&page=1&status=PENDING"),
-        apiRequest("/academies/owner/memberships?limit=100&page=1&status=APPROVED"),
-      ]);
-
-      const teacherSummary =
-        teachersApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
-      const studentSummary =
-        studentsApprovedResponse?.summary ?? EMPTY_USER_SUMMARY;
+      const [pendingMembershipsResponse, approvedMembershipsResponse] =
+        await Promise.all([
+          apiRequest(
+            "/academies/owner/memberships?limit=100&page=1&status=PENDING",
+          ),
+          apiRequest(
+            "/academies/owner/memberships?limit=100&page=1&status=APPROVED",
+          ),
+        ]);
 
       const approvedMemberships = Array.isArray(approvedMembershipsResponse?.data)
         ? approvedMembershipsResponse.data
         : [];
-      const membershipByUserId = new Map(
-        approvedMemberships.map((membership) => [membership.userId, membership]),
+
+      const buildMemberRecord = (membership, role) => {
+        const user = membership.user ?? {};
+        return {
+          id: user.id ?? membership.id,
+          membershipId: membership.id,
+          name: buildDisplayName(user),
+          email: user.email ?? "",
+          role: role.toLowerCase(),
+          status: user.status ?? membership.status,
+          joinDate: safeLocaleDate(
+            membership.respondedAt ?? membership.requestedAt,
+          ),
+          classes:
+            role === "TEACHER"
+              ? user._count?.teachingClasses ?? 0
+              : user._count?.classParticipants ?? 0,
+          enrolledClasses:
+            role === "STUDENT" ? user._count?.classParticipants ?? 0 : undefined,
+          phoneNumber: user.phoneNumber ?? "",
+        };
+      };
+
+      const teachersMemberships = approvedMemberships.filter(
+        (membership) => membership.role === "TEACHER",
+      );
+      const studentsMemberships = approvedMemberships.filter(
+        (membership) => membership.role === "STUDENT",
       );
 
-      const mappedTeachers = Array.isArray(teachersApprovedResponse?.data)
-        ? teachersApprovedResponse.data.map((teacher) => ({
-            ...mapTeacherRecord(teacher),
-            membershipId:
-              membershipByUserId.get(teacher.id)?.role === "TEACHER"
-                ? membershipByUserId.get(teacher.id)?.id ?? null
-                : null,
-          }))
-        : [];
+      const mappedTeachers = teachersMemberships.map((membership) =>
+        buildMemberRecord(membership, "TEACHER"),
+      );
+      const mappedStudents = studentsMemberships.map((membership) =>
+        buildMemberRecord(membership, "STUDENT"),
+      );
 
-      teacherIdsRef.current = new Set(mappedTeachers.map((teacher) => teacher.id));
-      const mappedStudents = Array.isArray(studentsApprovedResponse?.data)
-        ? studentsApprovedResponse.data.map((student) => ({
-            ...mapStudentRecord(student),
-            membershipId:
-              membershipByUserId.get(student.id)?.role === "STUDENT"
-                ? membershipByUserId.get(student.id)?.id ?? null
-                : null,
-          }))
-        : [];
+      teacherIdsRef.current = new Set(
+        mappedTeachers
+          .map((teacher) => teacher.id)
+          .filter((identifier) => Boolean(identifier)),
+      );
 
       setTeachers(mappedTeachers);
       setStudents(mappedStudents);
-      setTeachersSummary(teacherSummary);
-      setStudentsSummary(studentSummary);
-
       const pendingMemberships = Array.isArray(pendingMembershipsResponse?.data)
         ? pendingMembershipsResponse.data
         : [];
+      const pendingTeachersCount = pendingMemberships.filter(
+        (membership) => membership.role === "TEACHER",
+      ).length;
+      const pendingStudentsCount = pendingMemberships.filter(
+        (membership) => membership.role === "STUDENT",
+      ).length;
+
       const mappedPending = pendingMemberships.map(mapPendingMembershipRecord);
       setPendingUsers(mappedPending);
 
+      setTeachersSummary({
+        approved: mappedTeachers.length,
+        pending: pendingTeachersCount,
+        rejected: 0,
+        inactive: 0,
+      });
+      setStudentsSummary({
+        approved: mappedStudents.length,
+        pending: pendingStudentsCount,
+        rejected: 0,
+        inactive: 0,
+      });
+
       setSubscriptionUsage((prev) => ({
         ...prev,
-        studentCount: studentSummary.approved ?? prev.studentCount,
-        teacherCount: teacherSummary.approved ?? prev.teacherCount,
+        studentCount: mappedStudents.length,
+        teacherCount: mappedTeachers.length,
       }));
     } catch (error) {
       console.error("Failed to load user collections", error);
     }
-  }, [mapPendingMembershipRecord, mapStudentRecord, mapTeacherRecord]);
+  }, [mapPendingMembershipRecord]);
 
   const loadData = useCallback(async () => {
     if (!userId) {
@@ -811,6 +821,7 @@ const useAcademyData = () => {
     paymentsLoading,
     approvePendingUser,
     rejectPendingUser,
+    revokeMembership,
     purchaseCredits,
     uploadResource,
     updateResource,
