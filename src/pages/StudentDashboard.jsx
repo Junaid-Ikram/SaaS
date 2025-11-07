@@ -37,7 +37,47 @@ const StudentDashboard = () => {
 
   const nextClass = useMemo(() => upcomingClasses[0] ?? null, [upcomingClasses]);
 
+  const profilePhoto = user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl ?? null;
+  const studentInitials = useMemo(() => {
+    const parts = [user?.firstName, user?.lastName].filter(Boolean);
+    if (parts.length) {
+      return parts
+        .map((part) => (part ? part.charAt(0) : ""))
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+    }
+    const fallback = user?.email ?? "YOU";
+    return fallback.slice(0, 2).toUpperCase();
+  }, [user?.email, user?.firstName, user?.lastName]);
+
   const isBusy = loading || loadingAcademies;
+
+  const heroStats = useMemo(
+    () => [
+      {
+        label: "Classes",
+        value: metrics.totalClasses ?? 0,
+        caption: "Total available",
+      },
+      {
+        label: "Upcoming",
+        value: metrics.upcomingCount ?? 0,
+        caption: "Next few weeks",
+      },
+      {
+        label: "Teachers",
+        value: metrics.teacherCount ?? 0,
+        caption: "Ready to help",
+      },
+      {
+        label: "Resources",
+        value: resources.length ?? 0,
+        caption: "Shared with you",
+      },
+    ],
+    [metrics, resources],
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -212,103 +252,140 @@ const StudentDashboard = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className={`flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 shadow-inner ${(user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl) ? 'bg-white' : 'bg-gradient-to-br from-emerald-500 to-emerald-600'}`}
-            >
-              {(user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl) ? (
-                <img
-                  src={user?.profilePhotoUrl ?? userDetails?.profilePhotoUrl}
-                  alt="Your avatar"
-                  className="h-full w-full object-cover"
-                />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950/5">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-20 left-10 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-purple-200/40 blur-3xl" />
+      </div>
+      <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-500 to-emerald-500 p-6 text-white shadow-2xl"
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/30 bg-white/10 shadow-lg backdrop-blur">
+                {profilePhoto ? (
+                  <img
+                    src={profilePhoto}
+                    alt="Your avatar"
+                    className="h-full w-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-semibold uppercase tracking-wider text-white">
+                    {studentInitials}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-white/80">
+                  Student HQ
+                </p>
+                <h1 className="mt-1 text-3xl font-semibold">
+                  Hello{user?.firstName ? `, ${user.firstName}` : ''}!
+                </h1>
+                <p className="text-sm text-white/80">
+                  Keep tabs on upcoming sessions, trusted teachers, and on-demand resources.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4 shadow-inner backdrop-blur">
+              <p className="text-xs uppercase tracking-widest text-white/70">
+                Next class
+              </p>
+              {nextClass ? (
+                <>
+                  <p className="mt-2 text-lg font-semibold">{nextClass.title}</p>
+                  <p className="text-sm text-white/80">
+                    with {nextClass.teacher} · {formatDate(nextClass.start)}
+                  </p>
+                </>
               ) : (
-                <span className="text-base font-semibold uppercase tracking-widest text-white">
-                  {[user?.firstName, user?.lastName]
-                    .filter(Boolean)
-                    .map((part) => (part ? part.charAt(0) : ''))
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase() || (user?.email ?? 'YOU').slice(0, 2).toUpperCase()}
-                </span>
+                <p className="mt-2 text-sm text-white/80">
+                  Once your academy schedules a class it will appear here.
+                </p>
               )}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-emerald-700">Student Dashboard</h1>
-              <p className="text-gray-600">
-                Hello{user?.firstName ? `, ${user.firstName}` : ''}! Here's what's happening in your classes.
-              </p>
-            </div>
           </div>
-        </div>
-        {nextClass && (
-          <div className="max-w-xl rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
-            <span className="font-semibold">Next class:</span> {nextClass.title} with {nextClass.teacher} - {formatDate(nextClass.start)}
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {heroStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-sm backdrop-blur"
+              >
+                <p className="text-xs uppercase tracking-widest text-white/70">
+                  {stat.label}
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
+                <p className="text-xs text-white/70">{stat.caption}</p>
+              </div>
+            ))}
           </div>
-        )}
-      </motion.div>
-
-      {!hasAcademyAccess && !loadingAcademies ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">You're not currently enrolled in an academy.</p>
-          <p className="mt-1">Browse the academy directory to request access and unlock your classes and resources.</p>
-        </div>
-      ) : null}
-
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { key: 'courses', label: 'My Classes' },
-            { key: 'teachers', label: 'Teachers' },
-            { key: 'resources', label: 'Resources' },
-            { key: 'academies', label: 'Academies' },
-            { key: 'profile', label: 'My Profile' },
-          ].map((tab) => (
-            <motion.button
-              key={tab.key}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === tab.key ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-            </motion.button>
-          ))}
-        </nav>
-      </div>
-
-      {isBusy && renderLoading()}
-      {!isBusy && error && renderError()}
-
-      {!isBusy && !error && (
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          {activeTab === 'courses' && renderCourses()}
-          {activeTab === 'teachers' && renderTeachers()}
-          {activeTab === 'resources' && (
-            <StudentResourcesTab
-              resources={resources}
-              loading={resourcesLoading}
-              error={resourcesError}
-              onRefresh={refreshResources}
-              classes={classes}
-              hasAcademyAccess={hasAcademyAccess}
-              loadingAcademies={loadingAcademies}
-            />
-          )}
-          {activeTab === 'academies' && <AcademyDirectory />}
-          {activeTab === 'profile' ? (
-            <ProfileTab
-              title="My Profile"
-              subtitle="Express your learning style, keep details updated, and sparkle across the platform."
-            />
-          ) : null}
         </motion.div>
-      )}
+
+        {!hasAcademyAccess && !loadingAcademies ? (
+          <div className="rounded-2xl border border-amber-200/70 bg-amber-50/90 p-5 text-sm text-amber-900 shadow-sm">
+            <p className="font-semibold">You are not currently enrolled in an academy.</p>
+            <p className="mt-1">
+              Browse the academy directory to request access and unlock your classes and resources.
+            </p>
+          </div>
+        ) : null}
+
+        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-2 shadow-sm backdrop-blur">
+          <nav className="flex flex-wrap gap-2">
+            {[
+              { key: 'courses', label: 'My Classes' },
+              { key: 'teachers', label: 'Teachers' },
+              { key: 'resources', label: 'Resources' },
+              { key: 'academies', label: 'Academies' },
+              { key: 'profile', label: 'My Profile' },
+            ].map((tab) => (
+              <motion.button
+                key={tab.key}
+                whileTap={{ scale: 0.96 }}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  activeTab === tab.key
+                    ? 'bg-indigo-600 text-white shadow'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </motion.button>
+            ))}
+          </nav>
+        </div>
+
+        {isBusy && renderLoading()}
+        {!isBusy && error && renderError()}
+
+        {!isBusy && !error && (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible">
+            {activeTab === 'courses' && renderCourses()}
+            {activeTab === 'teachers' && renderTeachers()}
+            {activeTab === 'resources' && (
+              <StudentResourcesTab
+                resources={resources}
+                loading={resourcesLoading}
+                error={resourcesError}
+                onRefresh={refreshResources}
+                classes={classes}
+                hasAcademyAccess={hasAcademyAccess}
+                loadingAcademies={loadingAcademies}
+              />
+            )}
+            {activeTab === 'academies' && <AcademyDirectory />}
+            {activeTab === 'profile' ? (
+              <ProfileTab
+                title="My Profile"
+                subtitle="Express your learning style, keep details updated, and sparkle across the platform."
+              />
+            ) : null}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };

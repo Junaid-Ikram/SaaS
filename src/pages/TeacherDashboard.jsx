@@ -129,6 +129,32 @@ const TeacherDashboard = () => {
 
   const isBusy = loading || loadingAcademies;
 
+  const heroStats = useMemo(
+    () => [
+      {
+        label: "Live classes",
+        value: metrics?.totalClasses ?? 0,
+        caption: "Total scheduled",
+      },
+      {
+        label: "Upcoming",
+        value: metrics?.upcomingCount ?? 0,
+        caption: "Next 30 days",
+      },
+      {
+        label: "Students",
+        value: students?.length ?? 0,
+        caption: "Currently assigned",
+      },
+      {
+        label: "Resources",
+        value: resources?.length ?? 0,
+        caption: "Shared with academies",
+      },
+    ],
+    [metrics, students, resources],
+  );
+
   const handleStudentFilterChange = (event) => {
     const { name, value } = event.target;
     setStudentFiltersDraft((prev) => ({
@@ -370,135 +396,179 @@ const TeacherDashboard = () => {
   );
 
   return (
-    <div className="container mx-auto space-y-6 px-4 py-8">
-      <motion.div
-        className="space-y-4"
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className={`flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-emerald-200 shadow-inner ${avatarUrl ? 'bg-white' : 'bg-gradient-to-br from-emerald-500 to-emerald-600'}`}
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Your avatar" className="h-full w-full object-cover" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-950/5">
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -top-32 left-8 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl" />
+        <div className="absolute -bottom-20 right-0 h-80 w-80 rounded-full bg-teal-200/40 blur-3xl" />
+      </div>
+      <div className="relative mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-sky-500 p-6 text-white shadow-2xl"
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl border border-white/30 bg-white/10 shadow-lg backdrop-blur ${
+                  avatarUrl ? '' : 'bg-gradient-to-br from-white/30 to-white/10'
+                }`}
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Your avatar"
+                    className="h-full w-full rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className="text-lg font-semibold uppercase tracking-wider text-white">
+                    {avatarInitials}
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-sm uppercase tracking-[0.25em] text-white/80">
+                  Teacher HQ
+                </p>
+                <h1 className="mt-1 text-3xl font-semibold leading-relaxed">
+                  Welcome back{user?.firstName ? `, ${user.firstName}` : ''}.
+                </h1>
+                <p className="text-sm text-white/80">
+                  Orchestrate classes, resources, and academy growth from one polished hub.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4 shadow-inner backdrop-blur">
+              <p className="text-xs uppercase tracking-widest text-white/70">
+                Upcoming session
+              </p>
+              {upcomingClass ? (
+                <>
+                  <p className="mt-2 text-lg font-semibold">{upcomingClass.title}</p>
+                  <p className="text-sm text-white/80">{upcomingClass.start}</p>
+                </>
               ) : (
-                <span className="text-base font-semibold uppercase tracking-widest text-white">{avatarInitials}</span>
+                <p className="mt-2 text-sm text-white/80">
+                  Your next class will show up here once it is scheduled.
+                </p>
               )}
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-emerald-700">Teacher Dashboard</h1>
-              <p className="text-gray-600">Welcome back{user?.firstName ? `, ${user.firstName}` : ''}! Stay on top of your classes and students.</p>
-            </div>
           </div>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {heroStats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-sm backdrop-blur"
+              >
+                <p className="text-xs uppercase tracking-widest text-white/70">
+                  {stat.label}
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{stat.value}</p>
+                {stat.caption ? (
+                  <p className="text-xs text-white/70">{stat.caption}</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <div className="rounded-2xl border border-slate-200/60 bg-white/80 p-2 shadow-sm backdrop-blur">
+          <nav className="flex flex-wrap gap-2">
+            {[
+              { key: "classes", label: "My Classes" },
+              { key: "students", label: "Students" },
+              { key: "resources", label: "Resources" },
+              { key: "academies", label: "Academies" },
+              { key: "profile", label: "My Profile" },
+            ].map((tab) => (
+              <motion.button
+                key={tab.key}
+                whileTap={{ scale: 0.96 }}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  activeTab === tab.key
+                    ? "bg-emerald-600 text-white shadow"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+                onClick={() => setActiveTab(tab.key)}
+              >
+                {tab.label}
+              </motion.button>
+            ))}
+          </nav>
         </div>
-        {upcomingClass ? (
-          <div className="max-w-xl rounded-lg border border-emerald-100 bg-emerald-50 p-4 text-sm text-emerald-900">
-            <span className="font-semibold">Next session:</span> {upcomingClass.title} - {upcomingClass.start}
+
+        {isBusy && renderLoading()}
+        {!isBusy && error && renderError()}
+
+        {!loading && !loadingAcademies && !hasAcademyAccess ? (
+          <div className="rounded-2xl border border-amber-200/70 bg-amber-50/90 p-5 text-sm text-amber-900 shadow-sm">
+            <p className="font-semibold">You are not currently associated with an academy.</p>
+            <p className="mt-1 text-amber-800">
+              Join an academy from the directory to schedule classes and upload resources.
+            </p>
           </div>
         ) : null}
-      </motion.div>
 
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {[
-            { key: "classes", label: "My Classes" },
-            { key: "students", label: "Students" },
-            { key: "resources", label: "Resources" },
-            { key: "academies", label: "Academies" },
-            { key: "profile", label: "My Profile" },
-          ].map((tab) => (
-            <motion.button
-              key={tab.key}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`py-4 px-1 text-sm font-medium ${
-                activeTab === tab.key
-                  ? "border-b-2 border-emerald-500 text-emerald-600"
-                  : "border-b-2 border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-              }`}
-              onClick={() => setActiveTab(tab.key)}
-            >
-              {tab.label}
-            </motion.button>
-          ))}
-        </nav>
-      </div>
-
-      {isBusy && renderLoading()}
-      {!isBusy && error && renderError()}
-
-      {!loading && !loadingAcademies && !hasAcademyAccess ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-medium">You are not currently associated with an academy.</p>
-          <p className="mt-1 text-amber-800">Join an academy from the directory to schedule classes and upload resources.</p>
-        </div>
-      ) : null}
-
-      {!isBusy && !error && (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {activeTab === "classes" ? (
-            <TeacherClassesTab
-              classes={classes}
-              students={students}
-              filters={filters}
-              onUpdateFilters={updateFilters}
-              onCreateClass={createClass}
-              onUpdateClass={updateClass}
-              onDeleteClass={deleteClass}
-              loading={loading}
-              meta={classesMeta}
-              onRefresh={refresh}
-              metrics={metrics}
-              academyOptions={academyOptions}
-              activeAcademyId={activeAcademyId}
-              onSelectAcademy={setActiveAcademyId}
-              hasAcademyAccess={hasAcademyAccess}
-              loadingAcademies={loadingAcademies}
-              platformSettings={platformSettings}
+        {!isBusy && !error && (
+          <motion.div variants={containerVariants} initial="hidden" animate="visible">
+            {activeTab === "classes" ? (
+              <TeacherClassesTab
+                classes={classes}
+                students={students}
+                filters={filters}
+                onUpdateFilters={updateFilters}
+                onCreateClass={createClass}
+                onUpdateClass={updateClass}
+                onDeleteClass={deleteClass}
+                loading={loading}
+                meta={classesMeta}
+                onRefresh={refresh}
+                metrics={metrics}
+                academyOptions={academyOptions}
+                activeAcademyId={activeAcademyId}
+                onSelectAcademy={setActiveAcademyId}
+                hasAcademyAccess={hasAcademyAccess}
+                loadingAcademies={loadingAcademies}
+                platformSettings={platformSettings}
               />
-          ) : null}
-          {activeTab === "resources" ? (
-            <TeacherResourcesTab
-              resources={resources}
-              loading={resourcesLoading}
-              error={resourcesError}
-              onRefresh={refreshResources}
-              onCreate={createResource}
-              onUpdate={updateResource}
-              onDelete={deleteResource}
-              classes={classes}
-              hasAcademyAccess={hasAcademyAccess}
-              loadingAcademies={loadingAcademies}
-            />
-          ) : null}
-          {activeTab === "academies" ? (
-            <TeacherAcademiesTab
-              memberships={academyMemberships}
-              pendingRequests={pendingAcademyRequests}
-              activeAcademyId={activeAcademyId}
-              onSelectAcademy={setActiveAcademyId}
-              fetchDirectory={fetchAcademies}
-              onJoinAcademy={requestAcademyMembership}
-              onWithdrawMembership={withdrawAcademyMembership}
-              academyLimits={academyLimits}
-              loading={loadingAcademies}
-            />
-          ) : null}
-          {activeTab === "students" ? renderStudents() : null}
-          {activeTab === "profile" ? (
-            <ProfileTab
-              title="My Profile"
-              subtitle="Share your teaching style, update contact details, and keep learners in the loop."
-            />
-          ) : null}
-        </motion.div>
-      )}
+            ) : null}
+            {activeTab === "resources" ? (
+              <TeacherResourcesTab
+                resources={resources}
+                loading={resourcesLoading}
+                error={resourcesError}
+                onRefresh={refreshResources}
+                onCreate={createResource}
+                onUpdate={updateResource}
+                onDelete={deleteResource}
+                classes={classes}
+                hasAcademyAccess={hasAcademyAccess}
+                loadingAcademies={loadingAcademies}
+              />
+            ) : null}
+            {activeTab === "academies" ? (
+              <TeacherAcademiesTab
+                memberships={academyMemberships}
+                pendingRequests={pendingAcademyRequests}
+                activeAcademyId={activeAcademyId}
+                onSelectAcademy={setActiveAcademyId}
+                fetchDirectory={fetchAcademies}
+                onJoinAcademy={requestAcademyMembership}
+                onWithdrawMembership={withdrawAcademyMembership}
+                academyLimits={academyLimits}
+                loading={loadingAcademies}
+              />
+            ) : null}
+            {activeTab === "students" ? renderStudents() : null}
+            {activeTab === "profile" ? (
+              <ProfileTab
+                title="My Profile"
+                subtitle="Share your teaching style, update contact details, and keep learners in the loop."
+              />
+            ) : null}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };

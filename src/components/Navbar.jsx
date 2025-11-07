@@ -89,7 +89,7 @@ const Navbar = () => {
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
 
-      className={`fixed z-50 w-full transition-all duration-300 ${navOffsetClasses} ${
+      className={`absolute z-50 w-full ml-0 transition-all duration-300 ${navOffsetClasses} ${
         scrolled
           ? "bg-white/95 backdrop-blur-xl shadow-md border-b border-emerald-100"
           : "bg-white/80 backdrop-blur-md"
