@@ -37,6 +37,7 @@ const TeacherDashboard = () => {
     requestAcademyMembership,
     withdrawAcademyMembership,
     academyLimits,
+    platformSettings,
   } = useAuth();
   const [activeTab, setActiveTab] = useState("classes");
   const {
@@ -459,6 +460,7 @@ const TeacherDashboard = () => {
               onSelectAcademy={setActiveAcademyId}
               hasAcademyAccess={hasAcademyAccess}
               loadingAcademies={loadingAcademies}
+              platformSettings={platformSettings}
               />
           ) : null}
           {activeTab === "resources" ? (

@@ -11,6 +11,14 @@ const DEFAULT_SETTINGS = {
   supportEmail: "support@qedu.io",
   maxAcademiesPerTeacher: 3,
   maxAcademiesPerStudent: 1,
+  zoomHostVideoEnabled: true,
+  zoomParticipantVideoEnabled: false,
+  zoomJoinBeforeHost: false,
+  zoomMuteUponEntry: true,
+  zoomWaitingRoomEnabled: true,
+  zoomAutoRecordingMode: "cloud",
+  zoomAudioType: "both",
+  zoomChatEnabled: false,
 };
 const SETTINGS_METADATA = [
   {
@@ -70,6 +78,65 @@ const SETTINGS_METADATA = [
     type: "number",
     min: 0,
     max: 50,
+  },
+  {
+    key: "zoomHostVideoEnabled",
+    label: "Host video on start",
+    description: "Automatically enable video for hosts when meetings begin.",
+    type: "boolean",
+  },
+  {
+    key: "zoomParticipantVideoEnabled",
+    label: "Participant video on join",
+    description: "Allow participants to join with their video enabled.",
+    type: "boolean",
+  },
+  {
+    key: "zoomJoinBeforeHost",
+    label: "Allow join before host",
+    description: "Let attendees join the meeting lobby before the host arrives.",
+    type: "boolean",
+  },
+  {
+    key: "zoomMuteUponEntry",
+    label: "Mute upon entry",
+    description: "Automatically mute microphones when participants join.",
+    type: "boolean",
+  },
+  {
+    key: "zoomWaitingRoomEnabled",
+    label: "Waiting room",
+    description: "Hold attendees in the waiting room until the host admits them.",
+    type: "boolean",
+  },
+  {
+    key: "zoomAutoRecordingMode",
+    label: "Automatic recording",
+    description: "Choose where Zoom stores recordings by default.",
+    type: "select",
+    options: [
+      { value: "cloud", label: "Cloud (recommended)" },
+      { value: "local", label: "Local device" },
+      { value: "none", label: "Disabled" },
+    ],
+  },
+  {
+    key: "zoomAudioType",
+    label: "Audio transport",
+    description: "Restrict the audio options exposed to attendees.",
+    type: "select",
+    options: [
+      { value: "both", label: "Computer + phone" },
+      { value: "voip", label: "Computer audio only" },
+      { value: "telephony", label: "Phone only" },
+    ],
+  },
+  {
+    key: "zoomChatEnabled",
+    label: "Enable in-meeting chat",
+    description:
+      "Allow in-meeting chat for everyone (disable to keep sessions distraction free).",
+    type: "boolean",
   },
 ];
 
@@ -196,6 +263,32 @@ const SuperAdminPlatformSettingsPage = () => {
             }
           />
         </label>
+      );
+    }
+
+    if (config.type === "select") {
+      return (
+        <div key={config.key}>
+          <label
+            htmlFor={id}
+            className="block text-sm font-medium text-gray-800"
+          >
+            {config.label}
+          </label>
+          <p className="mt-1 text-xs text-gray-500">{config.description}</p>
+          <select
+            id={id}
+            className="mt-2 w-full rounded-md border border-gray-200 px-3 py-2 text-sm shadow-sm focus:border-green-500 focus:outline-none focus:ring-1 focus:ring-green-500"
+            value={value ?? config.options?.[0]?.value ?? ""}
+            onChange={(event) => handleFieldChange(config.key, event.target.value)}
+          >
+            {(config.options ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
       );
     }
 

@@ -36,6 +36,29 @@ const DEFAULT_FORM = {
   participants: [],
 };
 
+const describeOnOff = (flag, enabledLabel, disabledLabel) =>
+  flag ? enabledLabel : disabledLabel;
+
+const describeRecordingMode = (mode) => {
+  if (mode === "none") {
+    return "Recording disabled";
+  }
+  if (mode === "local") {
+    return "Auto (local)";
+  }
+  return "Auto (cloud)";
+};
+
+const describeAudioType = (type) => {
+  if (type === "telephony") {
+    return "Phone only";
+  }
+  if (type === "voip") {
+    return "Computer audio only";
+  }
+  return "Computer + phone";
+};
+
 const formatDate = (value) => {
   if (!value) return "-";
   try {
@@ -61,7 +84,8 @@ const TeacherClassesTab = ({
   activeAcademyId,
   onSelectAcademy,
   hasAcademyAccess,
-  loadingAcademies = false
+  loadingAcademies = false,
+  platformSettings = null,
 }) => {
   const [localFilters, setLocalFilters] = useState(filters);
   const [showFormModal, setShowFormModal] = useState(false);
@@ -215,6 +239,77 @@ const TeacherClassesTab = ({
     [classes.length, metrics],
   );
 
+  const zoomPolicyDetails = useMemo(() => {
+    if (!platformSettings) {
+      return [];
+    }
+    return [
+      {
+        label: "Recording",
+        value: describeRecordingMode(platformSettings.zoomAutoRecordingMode),
+      },
+      {
+        label: "Chat",
+        value: describeOnOff(
+          platformSettings.zoomChatEnabled,
+          "Allowed",
+          "Disabled",
+        ),
+      },
+      {
+        label: "Host video",
+        value: describeOnOff(
+          platformSettings.zoomHostVideoEnabled,
+          "On",
+          "Off",
+        ),
+      },
+      {
+        label: "Participant video",
+        value: describeOnOff(
+          platformSettings.zoomParticipantVideoEnabled,
+          "On",
+          "Off",
+        ),
+      },
+      {
+        label: "Waiting room",
+        value: describeOnOff(
+          platformSettings.zoomWaitingRoomEnabled,
+          "Enabled",
+          "Disabled",
+        ),
+      },
+      {
+        label: "Join before host",
+        value: describeOnOff(
+          platformSettings.zoomJoinBeforeHost,
+          "Allowed",
+          "Blocked",
+        ),
+      },
+      {
+        label: "Mute on entry",
+        value: describeOnOff(
+          platformSettings.zoomMuteUponEntry,
+          "On",
+          "Off",
+        ),
+      },
+      {
+        label: "Audio",
+        value: describeAudioType(platformSettings.zoomAudioType),
+      },
+    ];
+  }, [platformSettings]);
+
+  const zoomPolicyHighlights = useMemo(
+    () => (zoomPolicyDetails.length ? zoomPolicyDetails.slice(0, 4) : null),
+    [zoomPolicyDetails],
+  );
+
+  const zoomChatDisabled = platformSettings?.zoomChatEnabled === false;
+
   return (
     <motion.div
       key="teacher-classes"
@@ -265,6 +360,45 @@ const TeacherClassesTab = ({
           </div>
         ))}
       </div>
+
+      {zoomPolicyHighlights ? (
+        <div className="rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-emerald-700">
+                Zoom meeting policy
+              </h3>
+              <p className="text-sm text-gray-500">
+                Managed globally by the super admin team.
+              </p>
+            </div>
+            <p className="text-sm font-medium text-gray-600">
+              Chat {zoomChatDisabled ? "disabled" : "enabled"}
+            </p>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {zoomPolicyHighlights.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+              >
+                <p className="text-xs uppercase tracking-wide text-gray-500">
+                  {item.label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-gray-900">
+                  {item.value}
+                </p>
+              </div>
+            ))}
+          </div>
+          {zoomChatDisabled ? (
+            <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              In-meeting chat is disabled platform-wide. Share resources or
+              follow-up notes for learner questions.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -582,6 +716,30 @@ const TeacherClassesTab = ({
                     </div>
                   ) : null}
                 </div>
+
+                {zoomPolicyDetails.length ? (
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs text-emerald-800">
+                    <p className="text-sm font-semibold text-emerald-900">
+                      Admin-enforced Zoom options
+                    </p>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      {zoomPolicyDetails.map((item) => (
+                        <div
+                          key={item.label}
+                          className="flex items-center justify-between"
+                        >
+                          <span className="text-[11px] uppercase tracking-wide text-emerald-700">
+                            {item.label}
+                          </span>
+                          <span className="text-[13px] font-semibold text-emerald-900">
+                            {item.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+
                 <div>
                   <p className="text-sm font-medium text-gray-700">
                     Invite students

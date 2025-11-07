@@ -87,6 +87,7 @@ export function AuthProvider({ children }) {
   const [ownerAcademyStatus, setOwnerAcademyStatus] = useState('unknown');
   const [academyLimits, setAcademyLimits] = useState({ teacher: null, student: null });
   const [loadingAcademies, setLoadingAcademies] = useState(false);
+  const [platformSettings, setPlatformSettings] = useState(null);
 
   const setDatabaseInitialized = useCallback((status) => {
     setDbInitialized(Boolean(status));
@@ -152,6 +153,8 @@ export function AuthProvider({ children }) {
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
       setOwnerAcademyStatus('unknown');
+      setAcademyLimits({ teacher: null, student: null });
+      setPlatformSettings(null);
       return { success: true, memberships: [] };
     }
 
@@ -171,7 +174,12 @@ export function AuthProvider({ children }) {
           : Promise.resolve({ data: null });
       const platformSettingsPromise = apiRequest('/platform-settings').catch(() => null);
 
-      const [approvedMemberships, pendingMemberships, ownerResult, platformSettings] =
+      const [
+        approvedMemberships,
+        pendingMemberships,
+        ownerResult,
+        platformSettingsResult,
+      ] =
         await Promise.all([
           approvedMembershipPromise,
           pendingMembershipPromise,
@@ -205,12 +213,15 @@ export function AuthProvider({ children }) {
       setPendingAcademyRequests(pendingList);
       setOwnerAcademy(resolvedOwner);
       setOwnerAcademyStatus(academyStatus);
-      if (platformSettings) {
+      if (platformSettingsResult) {
         setAcademyLimits({
-          teacher: platformSettings.maxAcademiesPerTeacher ?? null,
-          student: platformSettings.maxAcademiesPerStudent ?? null,
+          teacher: platformSettingsResult.maxAcademiesPerTeacher ?? null,
+          student: platformSettingsResult.maxAcademiesPerStudent ?? null,
         });
+      } else {
+        setAcademyLimits({ teacher: null, student: null });
       }
+      setPlatformSettings(platformSettingsResult ?? null);
 
       return { success: true, memberships: approvedList };
     } catch (error) {
@@ -219,6 +230,8 @@ export function AuthProvider({ children }) {
       setPendingAcademyRequests([]);
       setOwnerAcademy(null);
       setOwnerAcademyStatus('unknown');
+      setAcademyLimits({ teacher: null, student: null });
+      setPlatformSettings(null);
       return { success: false, error };
     } finally {
       setLoadingAcademies(false);
@@ -481,6 +494,7 @@ export function AuthProvider({ children }) {
       setOwnerAcademy(null);
       setOwnerAcademyStatus('unknown');
       setAcademyLimits({ teacher: null, student: null });
+      setPlatformSettings(null);
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
@@ -501,6 +515,7 @@ export function AuthProvider({ children }) {
     ownerAcademyStatus,
     academyLimits,
     loadingAcademies,
+    platformSettings,
     refreshAcademyContext: loadAcademiesContext,
     registerAcademyOwner,
     registerTeacher,
